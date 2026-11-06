@@ -1,3 +1,4 @@
+import os
 import urllib.request
 import urllib.parse
 import json
@@ -136,7 +137,7 @@ def fetch_wiki_images():
 
     missing = [k for k, v in results.items() if not v]
     print(f"\nTotal resolved: {len(results) - len(missing)}/{len(results)}. Missing: {missing}")
-    with open("/Users/tuandinh/.gemini/antigravity/brain/0bba3639-6aa1-4358-af48-fa98be8e3cf6/scratch/verified_wiki_images.json", "w") as f:
+    with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), "verified_wiki_images.json"), "w") as f:
         json.dump(results, f, indent=2)
 
 if __name__ == "__main__":

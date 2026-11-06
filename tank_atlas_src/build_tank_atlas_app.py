@@ -6,7 +6,6 @@ import json
 import os
 import sys
 
-sys.path.insert(0, "/Users/tuandinh/.gemini/antigravity/brain/0bba3639-6aa1-4358-af48-fa98be8e3cf6/scratch")
 import generate_data as gd
 import expand_tanks as et
 

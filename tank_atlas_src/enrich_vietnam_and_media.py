@@ -10,7 +10,6 @@ Enriches the World Tank Atlas dataset with:
 4. Curated Wikimedia Commons image URLs, SVG silhouette types, and curated YouTube/Museum video links for every single tank.
 """
 import sys
-sys.path.insert(0, "/Users/tuandinh/.gemini/antigravity/brain/0bba3639-6aa1-4358-af48-fa98be8e3cf6/scratch")
 import build_tank_atlas_app as app
 import generate_data as gd
 

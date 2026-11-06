@@ -324,11 +324,11 @@ since the move it points at nothing.
 Synthesized from this review's findings. Each task derives from a specific
 finding above. Effort assumes features ~30x, architecture ~5x human:CC.
 
-- [ ] **TB (P1, human: ~10min / CC: ~2min): repo: git baseline before any change.**
+- [x] **TB (P1, human: ~10min / CC: ~2min): repo: git baseline before any change.**
   - Surfaced by: eng review S5 / R1 (D3).
   - Files: `world-tank-atlas/.gitignore` (new, `.gstack/`), repo root `world-tank-atlas/`.
   - Verify: `git log --oneline` shows the baseline commit, and `git status` is clean.
-- [ ] **T0 (P1, human: ~1 day / CC: ~45min): build: make the generator self-contained and single-writer. Blocks all other tasks.**
+- [x] **T0 (P1, human: ~1 day / CC: ~45min): build: make the generator self-contained and single-writer. Blocks all other tasks.**
   - Surfaced by: D24, corrected by eng review E1/E2. The scripts `sys.path.insert(0, ~/.gemini/.../scratch)` (`assemble_v2.py:3` and 5 others), so Python loads the scratch copies before local siblings. Local edits would be silently ignored; today they're byte-identical (`cmp`). `assemble_v2.py:13` reads `WORLD_POLYGONS` from its own previous output, and that is the only place the polygon data exists. `render_html.py:1929` is a legacy v1 writer to the same output. `assemble_v2.py:52` also writes a copy into `~/.gemini`.
   - Files: `tank_atlas_src/assemble_v2.py`, `tank_atlas_src/*.py` (remove the `sys.path.insert` lines), `tank_atlas_src/world_polygons.json` (new, extracted from `render_html.py:13` `WORLD_POLYGONS` **before** deleting that file; it equals the 12 polygons in the current output, see E5), delete `render_html.py` and `build_tank_atlas.py` (not in the `assemble_v2` import chain).
   - Verify: `python3 assemble_v2.py` with no `~/.gemini` folder on disk and no prior HTML present reproduces `world_tanks_atlas.html` byte-for-byte (a probe on a copy already matched 754,548/754,548 bytes with the self-read in place).

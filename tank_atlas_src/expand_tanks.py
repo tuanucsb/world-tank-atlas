@@ -4,7 +4,6 @@ Expands generate_data.py with 50 distinct iconic tanks (splitting grouped nodes 
 110+ lineage/similarity/combat edges, and 20 major world tank battles with tactical schematics.
 """
 import sys
-sys.path.insert(0, "/Users/tuandinh/.gemini/antigravity/brain/0bba3639-6aa1-4358-af48-fa98be8e3cf6/scratch")
 import generate_data as gd
 
 # Additional distinct tanks to add / refine so every major tank has its own node

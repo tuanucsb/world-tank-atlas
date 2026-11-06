@@ -1,10 +1,10 @@
 import json
+import os
 import sys
-sys.path.insert(0, '/Users/tuandinh/.gemini/antigravity/brain/0bba3639-6aa1-4358-af48-fa98be8e3cf6/scratch')
 
 from enrich_vietnam_and_media import get_enriched_data
 
-with open('/Users/tuandinh/.gemini/antigravity/brain/0bba3639-6aa1-4358-af48-fa98be8e3cf6/scratch/verified_wiki_images.json', 'r', encoding='utf-8') as f:
+with open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'verified_wiki_images.json'), 'r', encoding='utf-8') as f:
     VERIFIED_IMAGES = json.load(f)
 
 # 13 Additional Distinct Historical Tanks to expand from 67 -> 80 Tanks and ensure rich multi-tank rosters in every battle
