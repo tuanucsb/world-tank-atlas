@@ -166,6 +166,21 @@ JS_PART_2A = r"""
       document.documentElement.classList.toggle('light-theme');
     }
 
+    function toggleSiteMenu(open) {
+      const menu = document.getElementById('site-menu');
+      const btn = document.getElementById('site-switcher-btn');
+      const show = open === undefined ? menu.classList.contains('hidden') : open;
+      menu.classList.toggle('hidden', !show);
+      btn.setAttribute('aria-expanded', show ? 'true' : 'false');
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#site-menu, #site-switcher-btn')) toggleSiteMenu(false);
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') toggleSiteMenu(false);
+    });
+
     function setMapPinMode(mode) {
       state.mapPinMode = mode;
       ['both', 'battles', 'tanks'].forEach(m => {
@@ -401,12 +416,8 @@ JS_PART_2A = r"""
     function setConflictFilter(cf) {
       state.conflictFilter = cf;
       document.querySelectorAll('.cf-btn').forEach(b => {
-        b.className = 'cf-btn px-2 py-1 rounded-md text-xs font-semibold border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]';
+        b.setAttribute('aria-pressed', b.id === 'cf-' + cf ? 'true' : 'false');
       });
-      const activeBtn = document.getElementById('cf-' + cf);
-      if (activeBtn) {
-        activeBtn.className = 'cf-btn px-2.5 py-1 rounded-md text-xs font-bold border border-amber-500 bg-amber-500/25 text-[var(--foreground)]';
-      }
       renderMapTankPhotoStrip();
       if (typeof renderAll85TanksPhotoGrid === 'function') renderAll85TanksPhotoGrid();
       renderCatalogAndMatrix();
@@ -442,6 +453,9 @@ JS_PART_2A = r"""
         : 'px-2.5 py-1 rounded text-xs font-semibold bg-[var(--background)] border border-[var(--border)] text-[var(--muted-foreground)]';
     }
 
+    // Views that use the era/nation filter row under the app bar
+    const FILTERED_VIEWS = ['map', 'tank-page', 'graph'];
+
     function switchMainView(view) {
       state.mainView = view;
       ['graph', 'map', 'tank-page', 'battle-page', 'duel', 'matrix'].forEach(v => {
@@ -451,13 +465,15 @@ JS_PART_2A = r"""
         if (v === view) {
           sec.classList.remove('hidden');
           sec.classList.add('flex');
-          tab.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition bg-amber-500 text-slate-950 shadow-sm';
+          tab.setAttribute('aria-current', 'page');
         } else {
           sec.classList.add('hidden');
           sec.classList.remove('flex');
-          tab.className = 'px-3 py-1.5 rounded-lg text-xs font-bold transition text-[var(--muted-foreground)] hover:text-[var(--foreground)]';
+          tab.removeAttribute('aria-current');
         }
       });
+      document.getElementById('filter-row').classList.toggle('hidden', !FILTERED_VIEWS.includes(view));
+      document.getElementById('atlas-summary').classList.toggle('hidden', view !== 'map');
       if (view === 'tank-page') {
         if (typeof renderAll85TanksPhotoGrid === 'function') renderAll85TanksPhotoGrid();
         renderTankPage();

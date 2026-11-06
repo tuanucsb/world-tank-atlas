@@ -43,6 +43,8 @@ data_js = (
 )
 
 full_html = HTML_HEAD_AND_BODY + "\n" + data_js + "\n" + JS_PART_2A + "\n" + JS_PART_2B
+# Counts shown in the UI come from the data, never hand-typed
+full_html = full_html.replace("__N_TANKS__", str(len(TANKS))).replace("__N_BATTLES__", str(len(BATTLES)))
 
 # Output path: first CLI argument, else world_tanks_atlas.html next to this folder
 out_path = sys.argv[1] if len(sys.argv) > 1 else os.path.join(SRC_DIR, "..", "world_tanks_atlas.html")

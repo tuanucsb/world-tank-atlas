@@ -337,7 +337,7 @@ finding above. Effort assumes features ~30x, architecture ~5x human:CC.
   - Files: `DESIGN.md` (new), `tank_atlas_src/build_v2_part1.py` (head CSS / Tailwind config), `build_v2_part2a.py`, `build_v2_part2b.py`.
   - Also (eng D4): delete the gstatic dev Tailwind script (`build_v2_part1.py:8`); map tokens through an inline `tailwind.config` for `cdn.tailwindcss.com`.
   - Verify: `grep -c 'gstatic.com/antigravity' world_tanks_atlas.html` is 0; `grep -oiE '#[0-9a-f]{6}'` on the output only finds token definitions; no `text-[9|9.5|10|10.5|11px]` or `text-xs` on content; contrast spot-check in both themes.
-- [ ] **T2 (P1, human: ~1 day / CC: ~30min): app bar: 56px bar, filter row, site switcher, plain copy.**
+- [x] **T2 (P1, human: ~1 day / CC: ~30min): app bar: 56px bar, filter row, site switcher, plain copy.**
   - Surfaced by: Pass 1 (D3), Pass 4 (D11, D12), Pass 7 (D21).
   - Files: `tank_atlas_src/build_v2_part1.py`.
   - Verify: in the browser at 1440x900, header height is 56px plus a 40px filter row on Map only; title/h1 read "World Tank Atlas"; counts equal `len(TANKS)`/`len(BATTLES)`; switcher opens `../scifi-ai-atlas/index.html`.
