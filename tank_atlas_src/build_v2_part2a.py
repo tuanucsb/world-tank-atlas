@@ -114,9 +114,10 @@ JS_PART_2A = r"""
       animTick: 0,
       // Live Battle Simulation State
       sim: {
-        playing: true,
+        status: 'ready', // 'ready' | 'playing' | 'paused' | 'ended' (set via setSimStatus)
+        playing: false,
         speed: 1.0,
-        progress: 0.25, // 0.0 to 1.0
+        progress: 0.0, // 0.0 to 1.0
         showHulls: true,
         mapBgMode: 'historical', // 'historical' | 'topo' | 'satellite' | 'tactical'
         killcamIdx: 0,
@@ -458,6 +459,7 @@ JS_PART_2A = r"""
 
     // Renders a view. Call switchMainView() instead, which routes through the URL hash.
     function showView(view) {
+      if (view !== 'battle-page' && state.sim.status === 'playing') setSimStatus('paused');
       state.mainView = view;
       ['graph', 'map', 'tank-page', 'battle-page', 'duel', 'matrix'].forEach(v => {
         const sec = document.getElementById('view-' + v);
@@ -502,7 +504,8 @@ JS_PART_2A = r"""
       const sel = document.getElementById('battle-page-select');
       if (sel) sel.value = state.selectedBattleId;
       state.sim.progress = initialProgress;
-      state.sim.playing = true;
+      state.sim.status = 'ready';
+      state.sim.playing = false;
       state.sim.logs = [];
       state.sim.lastPhaseLogged = -1;
       showView('battle-page');

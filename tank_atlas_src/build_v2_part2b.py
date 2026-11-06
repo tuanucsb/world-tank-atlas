@@ -353,18 +353,54 @@ JS_PART_2B = r"""
       btn.setAttribute('aria-label', state.sim.playing ? 'Pause' : 'Play');
     }
 
-    function toggleSimPlay() {
-      state.sim.playing = !state.sim.playing;
+    // Playback states: 'ready' (just opened, Play overlay), 'playing', 'paused', 'ended' (result overlay).
+    // Every start/stop goes through setSimStatus so the button, overlay and loop agree.
+    function setSimStatus(status) {
+      state.sim.status = status;
+      state.sim.playing = status === 'playing';
       syncPlayButton();
+      syncSimOverlay();
+    }
+
+    function syncSimOverlay() {
+      const overlay = document.getElementById('sim-overlay');
+      if (!overlay) return;
+      const status = state.sim.status;
+      overlay.classList.toggle('hidden', status !== 'ready' && status !== 'ended');
+      document.getElementById('sim-overlay-ready').classList.toggle('hidden', status !== 'ready');
+      document.getElementById('sim-overlay-ended').classList.toggle('hidden', status !== 'ended');
+    }
+
+    function toggleSimPlay() {
+      if (state.sim.status === 'ended') return restartBattleSim();
+      setSimStatus(state.sim.playing ? 'paused' : 'playing');
     }
 
     function restartBattleSim() {
       state.sim.progress = 0.0;
-      state.sim.playing = true;
       state.sim.logs = [];
       state.sim.lastPhaseLogged = -1;
-      syncPlayButton();
+      const scrub = document.getElementById('sim-scrubber');
+      if (scrub) scrub.value = '0';
+      setSimStatus('playing');
     }
+
+    // Auto-pause: battlefield scrolled out of view, or the browser tab hidden
+    let simStageObserver = null;
+    function observeSimStage() {
+      if (simStageObserver) simStageObserver.disconnect();
+      const stage = document.querySelector('.sim-stage');
+      if (!stage || !('IntersectionObserver' in window)) return;
+      simStageObserver = new IntersectionObserver(entries => {
+        entries.forEach(e => {
+          if (!e.isIntersecting && state.sim.status === 'playing') setSimStatus('paused');
+        });
+      }, { threshold: 0.25 });
+      simStageObserver.observe(stage);
+    }
+    document.addEventListener('visibilitychange', () => {
+      if (document.hidden && state.sim.status === 'playing') setSimStatus('paused');
+    });
 
     function setSimSpeed(spd) {
       state.sim.speed = spd;
@@ -375,10 +411,12 @@ JS_PART_2B = r"""
 
     function scrubBattleSim(val) {
       state.sim.progress = parseFloat(val);
+      if (state.sim.status === 'ended') setSimStatus('paused');
     }
 
     function setBattleSimProgress(pct) {
       state.sim.progress = Math.min(0.999, Math.max(0, pct / 100));
+      if (state.sim.status === 'ended') setSimStatus('paused');
       const scrub = document.getElementById('sim-scrubber');
       if (scrub) scrub.value = state.sim.progress.toFixed(3);
     }
@@ -570,6 +608,32 @@ JS_PART_2B = r"""
                 <img id="battle-sim-hist-map" src="${b.real_map_url || ''}" alt="Historical map of ${b.name}" class="absolute inset-0 w-full h-full object-cover opacity-45 pointer-events-none z-0" />
                 <div class="absolute inset-0 bg-slate-950/35 pointer-events-none z-[1]"></div>
                 <canvas id="battle-sim-canvas" class="relative z-10 w-full h-full block cursor-pointer"></canvas>
+
+                <!-- Ready (Play) and Ended (result) overlay; shown by syncSimOverlay() -->
+                <div id="sim-overlay" class="hidden absolute inset-0 z-20 flex items-center justify-center bg-slate-950/55 p-4">
+                  <div id="sim-overlay-ready" class="hidden flex flex-col items-center gap-3 text-center">
+                    <button onclick="setSimStatus('playing')" aria-label="Play the battle" class="w-20 h-20 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center justify-center shadow-lg">
+                      <svg aria-hidden="true" width="34" height="34" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5l12 7-12 7z"/></svg>
+                    </button>
+                    <div class="text-lg font-semibold text-white">Play the battle</div>
+                    <div class="text-sm text-slate-200">${phases.length} phases, ${b.date}</div>
+                  </div>
+                  <div id="sim-overlay-ended" role="status" class="hidden w-full max-w-md rounded-[10px] bg-[var(--card)] border border-[var(--border)] p-5 flex flex-col gap-3">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-amber-400">Battle over</div>
+                    <div>
+                      <div class="text-sm text-[var(--muted-foreground)]">Winner</div>
+                      <div class="text-lg font-semibold text-[var(--foreground)] leading-snug">${b.winner}</div>
+                    </div>
+                    <dl class="grid grid-cols-1 gap-2 text-sm">
+                      <div><dt class="font-semibold text-sky-400">${b.side_a.name} losses</dt><dd class="text-[var(--foreground)]">${b.losses_a}</dd></div>
+                      <div><dt class="font-semibold text-rose-400">${b.side_b.name} losses</dt><dd class="text-[var(--foreground)]">${b.losses_b}</dd></div>
+                    </dl>
+                    <div class="flex gap-2 pt-1">
+                      <button onclick="restartBattleSim()" class="h-11 px-4 rounded-md border border-[var(--border)] text-[var(--foreground)] hover:border-amber-400 text-sm font-semibold">Replay</button>
+                      <button onclick="stepBattlePage(1)" class="h-11 px-4 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-semibold">Next battle</button>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <!-- Docked control bar -->
@@ -832,6 +896,8 @@ JS_PART_2B = r"""
       const headerTitle = document.getElementById('battle-header-title');
       if (headerTitle) headerTitle.textContent = `${b.name}, ${b.year}`;
       syncPlayButton();
+      syncSimOverlay();
+      observeSimStage();
 
       setTimeout(() => {
         setSimMapBgMode(state.sim.mapBgMode || 'historical');
@@ -1223,7 +1289,10 @@ JS_PART_2B = r"""
       // Advance simulation progress if playing
       if (state.sim.playing) {
         state.sim.progress += 0.0010 * state.sim.speed;
-        if (state.sim.progress > 1.0) state.sim.progress = 0.0;
+        if (state.sim.progress >= 1.0) {
+          state.sim.progress = 1.0;
+          setSimStatus('ended');
+        }
         const scrub = document.getElementById('sim-scrubber');
         if (scrub) scrub.value = state.sim.progress.toFixed(3);
       }

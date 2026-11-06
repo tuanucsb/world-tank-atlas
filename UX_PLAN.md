@@ -353,7 +353,7 @@ finding above. Effort assumes features ~30x, architecture ~5x human:CC.
   - Surfaced by: Pass 1 (D5).
   - Files: `tank_atlas_src/build_v2_part2b.py`.
   - Verify: at 1440x900 the battlefield and control bar are fully visible without scrolling below the app bar.
-- [ ] **T6 (P1, human: ~4h / CC: ~20min): simulator: Ready/Playing/Paused/Ended states and auto-pause.**
+- [x] **T6 (P1, human: ~4h / CC: ~20min): simulator: Ready/Playing/Paused/Ended states and auto-pause.**
   - Surfaced by: Pass 2 (D7).
   - Files: `tank_atlas_src/build_v2_part2b.py`.
   - Verify: the sim is in Ready on open; scrolling away pauses it; reaching the end shows the result overlay.
