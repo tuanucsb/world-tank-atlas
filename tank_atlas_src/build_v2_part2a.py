@@ -506,6 +506,8 @@ JS_PART_2A = r"""
       state.sim.progress = initialProgress;
       state.sim.status = 'ready';
       state.sim.playing = false;
+      state.sim.selectedAgentId = null;
+      state.sim.statusBeforeSelect = null;
       state.sim.logs = [];
       state.sim.lastPhaseLogged = -1;
       showView('battle-page');

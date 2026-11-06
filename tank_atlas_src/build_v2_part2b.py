@@ -372,6 +372,7 @@ JS_PART_2B = r"""
     }
 
     function toggleSimPlay() {
+      if (state.sim.selectedAgentId != null) clearSimUnit(false);
       if (state.sim.status === 'ended') return restartBattleSim();
       setSimStatus(state.sim.playing ? 'paused' : 'playing');
     }
@@ -663,6 +664,8 @@ JS_PART_2B = r"""
 
             <!-- Story panel: current phase + event feed -->
             <aside aria-label="Battle story" class="sim-panel lg:col-span-1 bg-[var(--card)] border border-[var(--border)] rounded-[10px] flex flex-col min-w-0">
+              <div id="sim-unit-card" class="hidden flex-1 min-h-0 overflow-y-auto custom-scroll p-4 flex flex-col gap-3"></div>
+              <div id="sim-story" class="flex-1 min-h-0 flex flex-col">
               <div class="p-4 border-b border-[var(--border)] flex flex-col gap-1">
                 <div id="sim-phase-label" class="text-xs font-semibold uppercase tracking-wide text-amber-400"></div>
                 <h3 id="sim-banner-title" class="text-base font-semibold text-[var(--foreground)] leading-snug"></h3>
@@ -672,6 +675,7 @@ JS_PART_2B = r"""
               <div class="flex-1 min-h-0 overflow-y-auto custom-scroll p-4 flex flex-col gap-2">
                 <div class="text-xs font-semibold text-[var(--muted-foreground)]">Events</div>
                 <div id="sim-telemetry-log" aria-live="off" class="flex flex-col gap-2 text-sm text-[var(--foreground)]"></div>
+              </div>
               </div>
               <div class="p-3 border-t border-[var(--border)] flex flex-wrap items-center gap-1.5">
                 <span class="text-xs text-[var(--muted-foreground)] mr-1">Map</span>
@@ -1253,27 +1257,84 @@ JS_PART_2B = r"""
       canvas.dataset.bound = '1';
 
       canvas.addEventListener('mousemove', (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const mx = e.clientX - rect.left;
-        const my = e.clientY - rect.top;
-        let hit = null;
-        for (let i = simScreenAgents.length - 1; i >= 0; i--) {
-          const a = simScreenAgents[i];
-          if (Math.hypot(mx - a.x, my - a.y) <= 15) {
-            hit = a;
-            break;
-          }
-        }
+        const hit = hitTestSimAgent(canvas, e, 15);
         hoveredSimAgent = hit;
         canvas.style.cursor = hit ? 'pointer' : 'default';
       });
 
-      canvas.addEventListener('click', () => {
-        if (hoveredSimAgent && hoveredSimAgent.tankId) {
-          openTankPopup(hoveredSimAgent.tankId);
-        }
+      // Touch gets a 22px radius (44px target); mouse keeps 15px
+      canvas.addEventListener('click', (e) => {
+        const touch = e.pointerType === 'touch' || matchMedia('(pointer: coarse)').matches;
+        const hit = hitTestSimAgent(canvas, e, touch ? 22 : 15);
+        if (hit && hit.tankId) selectSimUnit(hit.id);
       });
     }
+
+    function hitTestSimAgent(canvas, e, radius) {
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left;
+      const my = e.clientY - rect.top;
+      for (let i = simScreenAgents.length - 1; i >= 0; i--) {
+        const a = simScreenAgents[i];
+        if (Math.hypot(mx - a.x, my - a.y) <= radius) return a;
+      }
+      return null;
+    }
+
+    // Clicking a unit pauses the battle, rings the unit and shows its tank card in the story panel.
+    // Back to story, Play or Esc restores the panel and resumes only if the battle was playing.
+    function selectSimUnit(agentId) {
+      const agent = simScreenAgents.find(a => a.id === agentId);
+      if (!agent) return;
+      if (state.sim.selectedAgentId == null) state.sim.statusBeforeSelect = state.sim.status;
+      state.sim.selectedAgentId = agentId;
+      if (state.sim.status === 'playing') setSimStatus('paused');
+      renderSimUnitCard(agent);
+    }
+
+    function clearSimUnit(resume = true) {
+      if (state.sim.selectedAgentId == null) return;
+      state.sim.selectedAgentId = null;
+      document.getElementById('sim-unit-card')?.classList.add('hidden');
+      document.getElementById('sim-story')?.classList.remove('hidden');
+      if (resume && state.sim.statusBeforeSelect === 'playing') setSimStatus('playing');
+      state.sim.statusBeforeSelect = null;
+    }
+
+    function renderSimUnitCard(agent) {
+      const card = document.getElementById('sim-unit-card');
+      const t = TANK_MAP[agent.tankId];
+      if (!card || !t) return;
+      const status = agent.isWreck
+        ? `Knocked out at ${Math.round(agent.killAt * 100)}% of the battle${agent.killCause ? ': ' + agent.killCause : ''}`
+        : 'In action';
+      card.innerHTML = `
+        <button onclick="clearSimUnit()" class="self-start h-10 px-2 -ml-2 rounded-md text-sm font-semibold text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center gap-1">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+          Back to story
+        </button>
+        <div class="aspect-[4/3] w-full rounded-md overflow-hidden bg-[var(--surface-raised)] border border-[var(--border)]">
+          <img src="${t.photo_url || t.image_url || ''}" alt="${t.name}" class="w-full h-full object-cover" />
+        </div>
+        <div>
+          <div class="text-xs font-semibold uppercase tracking-wide ${agent.side === 'A' ? 'text-sky-400' : 'text-rose-400'}">${agent.side === 'A' ? 'Side A' : 'Side B'}</div>
+          <h3 class="text-lg font-semibold text-[var(--foreground)] leading-snug">${t.name} (${t.year})</h3>
+          <div class="text-sm text-[var(--muted-foreground)]">${t.role || ''}</div>
+        </div>
+        <dl class="grid grid-cols-2 gap-x-3 gap-y-1 text-sm">
+          <dt class="text-[var(--muted-foreground)]">Gun</dt><dd class="text-[var(--foreground)]">${t.gun}</dd>
+          <dt class="text-[var(--muted-foreground)]">Armor</dt><dd class="text-[var(--foreground)] tabular-nums">${t.armor_mm} mm</dd>
+          <dt class="text-[var(--muted-foreground)]">Weight</dt><dd class="text-[var(--foreground)] tabular-nums">${t.weight_t} t</dd>
+          <dt class="text-[var(--muted-foreground)]">Status</dt><dd class="${agent.isWreck ? 'text-rose-400' : 'text-[var(--foreground)]'}">${status}</dd>
+        </dl>
+        <button onclick="openTankPage('${t.id}')" class="h-11 px-4 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-semibold">Open tank page</button>`;
+      document.getElementById('sim-story')?.classList.add('hidden');
+      card.classList.remove('hidden');
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && state.mainView === 'battle-page') clearSimUnit();
+    });
 
     function drawBattleSimCanvas() {
       const canvas = document.getElementById('battle-sim-canvas');
@@ -1578,10 +1639,18 @@ JS_PART_2B = r"""
       const sortedAgents = [...simScreenAgents].sort((a, b) => (a.isWreck === b.isWreck ? 0 : (a.isWreck ? -1 : 1)));
       sortedAgents.forEach((ag, idx) => {
         const color = ag.side === 'A' ? '#38bdf8' : '#f43f5e';
-        const isHov = hoveredSimAgent && hoveredSimAgent.id === ag.id;
+        const isSel = state.sim.selectedAgentId === ag.id;
+        const isHov = (hoveredSimAgent && hoveredSimAgent.id === ag.id) || isSel;
 
         if (state.sim.showHulls || ag.isLoneKV || isHov) {
           drawArticulatedTankAgent(ctx, ag.x, ag.y, ag.angle, color, ag, ag.isWreck, ag.isRicochet, isHov, p);
+        }
+        if (isSel) {
+          ctx.strokeStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent').trim() || '#f2a93b';
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(ag.x, ag.y, 22, 0, Math.PI * 2);
+          ctx.stroke();
         }
 
         // Show compact model label on key lead tanks, heavy tanks, Lone KV, or hovered tank

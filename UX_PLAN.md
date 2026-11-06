@@ -357,7 +357,7 @@ finding above. Effort assumes features ~30x, architecture ~5x human:CC.
   - Surfaced by: Pass 2 (D7).
   - Files: `tank_atlas_src/build_v2_part2b.py`.
   - Verify: the sim is in Ready on open; scrolling away pauses it; reaching the end shows the result overlay.
-- [ ] **T7 (P1, human: ~4h / CC: ~20min): simulator: unit select pauses and shows the tank card in the panel.**
+- [x] **T7 (P1, human: ~4h / CC: ~20min): simulator: unit select pauses and shows the tank card in the panel.**
   - Surfaced by: Pass 3 (D10).
   - Files: `tank_atlas_src/build_v2_part2b.py`, `build_v2_part2a.py`.
   - Verify: clicking a unit pauses, shows the ring and the card; Esc resumes.
