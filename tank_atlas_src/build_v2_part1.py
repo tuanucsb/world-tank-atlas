@@ -5,39 +5,99 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>World Tank Atlas (1916–2026): 86 Real Tank Photos, Real Topographic &amp; Historical Battle Maps, Kill-Cam Explosions &amp; Combat Footage</title>
-  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" />
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    // Design tokens (DESIGN.md): Tailwind palettes resolve to theme-aware CSS variables
+    const tokenRamp = (name) => Object.fromEntries(
+      [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map(s => [s, `rgb(var(--${name}-${s}) / <alpha-value>)`])
+    );
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            white: 'rgb(var(--n-50) / <alpha-value>)',
+            slate: tokenRamp('n'), gray: tokenRamp('n'), zinc: tokenRamp('n'),
+            amber: tokenRamp('acc'), yellow: tokenRamp('acc'), orange: tokenRamp('acc'),
+            sky: tokenRamp('sa'), cyan: tokenRamp('sa'), blue: tokenRamp('sa'),
+            indigo: tokenRamp('sa'), violet: tokenRamp('sa'), purple: tokenRamp('sa'), fuchsia: tokenRamp('sa'), pink: tokenRamp('sa'),
+            rose: tokenRamp('sb'), red: tokenRamp('sb'),
+            emerald: tokenRamp('ok'), green: tokenRamp('ok'), teal: tokenRamp('ok'), lime: tokenRamp('ok'),
+          },
+          fontFamily: {
+            sans: ['"IBM Plex Sans"', 'sans-serif'],
+            display: ['"Barlow Condensed"', '"IBM Plex Sans"', 'sans-serif'],
+          },
+          fontSize: {
+            xs: ['0.875rem', { lineHeight: '1.25rem' }],
+          },
+        },
+      },
+    };
+  </script>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
+    /* Token ramps (RGB triplets). n = neutral, acc = accent, sa = Side A, sb = Side B, ok = winner/success */
     :root {
-      --background: #0b1120;
-      --card: #131d33;
-      --card-elevated: #1a2744;
-      --foreground: #f8fafc;
-      --muted-foreground: #cbd5e1;
-      --border: #2e4166;
-      --canvas-bg: #070d19;
+      --ok-50: 233 248 240; --ok-100: 205 238 221; --ok-200: 159 220 191; --ok-300: 115 203 161; --ok-400: 76 195 138; --ok-500: 54 168 115; --ok-600: 42 134 92; --ok-700: 33 103 71; --ok-800: 25 76 53; --ok-900: 17 52 35; --ok-950: 10 32 22;
+      --n-50: 246 247 242; --n-100: 236 239 230; --n-200: 216 221 209; --n-300: 196 203 187; --n-400: 169 178 160; --n-500: 111 124 105; --n-600: 74 87 70; --n-700: 46 58 46; --n-800: 36 48 36; --n-900: 26 33 26; --n-950: 17 22 17;
+      --acc-50: 253 243 225; --acc-100: 251 228 189; --acc-200: 248 208 138; --acc-300: 245 189 95; --acc-400: 242 169 59; --acc-500: 224 149 42; --acc-600: 194 125 29; --acc-700: 154 98 22; --acc-800: 111 71 16; --acc-900: 74 47 11; --acc-950: 46 29 6;
+      --sa-50: 234 242 253; --sa-100: 211 227 251; --sa-200: 169 200 245; --sa-300: 126 172 239; --sa-400: 79 143 232; --sa-500: 58 120 212; --sa-600: 44 96 176; --sa-700: 34 73 138; --sa-800: 26 54 102; --sa-900: 18 37 74; --sa-950: 11 23 46;
+      --sb-50: 253 236 234; --sb-100: 250 211 208; --sb-200: 244 168 163; --sb-300: 237 125 118; --sb-400: 229 83 75; --sb-500: 207 63 55; --sb-600: 172 50 43; --sb-700: 133 39 34; --sb-800: 95 28 24; --sb-900: 64 19 16; --sb-950: 39 11 9;
+
+      --surface: rgb(var(--n-950));
+      --surface-raised: rgb(var(--n-900));
+      --text: rgb(var(--n-100));
+      --text-muted: rgb(var(--n-400));
+      --border-token: rgb(var(--n-700));
+      --accent: rgb(var(--acc-400));
+      --focus: rgb(var(--acc-400));
+      --side-a: rgb(var(--sa-400));
+      --side-b: rgb(var(--sb-400));
+      --tint-east: #8a3b3b33;
+      --tint-desert: #8a733b33;
+      --tint-asia: #3b7a5a33;
+
+      /* Legacy names used across the markup, now aliases of the tokens */
+      --background: var(--surface);
+      --card: var(--surface-raised);
+      --card-elevated: rgb(var(--n-800));
+      --foreground: var(--text);
+      --muted-foreground: var(--text-muted);
+      --border: var(--border-token);
+      --canvas-bg: #0b0f0b;
     }
     html.light-theme {
-      --background: #f1f5f9;
-      --card: #ffffff;
-      --card-elevated: #f8fafc;
-      --foreground: #0f172a;
-      --muted-foreground: #334155;
-      --border: #cbd5e1;
-      --canvas-bg: #0c192c;
+      --ok-50: 12 51 32; --ok-100: 16 64 42; --ok-200: 22 82 54; --ok-300: 29 100 67; --ok-400: 47 122 82; --ok-500: 58 138 96; --ok-600: 76 154 112; --ok-700: 205 233 218; --ok-800: 223 241 231; --ok-900: 239 248 243; --ok-950: 247 252 249;
+      --n-50: 17 22 15; --n-100: 27 33 24; --n-200: 43 51 40; --n-300: 61 71 57; --n-400: 79 90 74; --n-500: 111 122 104; --n-600: 154 163 146; --n-700: 201 207 194; --n-800: 227 231 221; --n-900: 255 255 255; --n-950: 238 240 234;
+      --acc-50: 74 44 0; --acc-100: 90 53 0; --acc-200: 111 66 0; --acc-300: 127 76 0; --acc-400: 147 90 0; --acc-500: 154 92 0; --acc-600: 138 82 0; --acc-700: 245 217 168; --acc-800: 249 230 196; --acc-900: 252 241 221; --acc-950: 254 248 238;
+      --sa-50: 11 42 92; --sa-100: 15 54 117; --sa-200: 22 68 144; --sa-300: 27 82 168; --sa-400: 31 95 191; --sa-500: 42 108 204; --sa-600: 58 120 212; --sa-700: 201 220 246; --sa-800: 221 232 249; --sa-900: 237 243 252; --sa-950: 246 249 254;
+      --sb-50: 77 19 15; --sb-100: 99 24 19; --sb-200: 125 30 24; --sb-300: 158 39 32; --sb-400: 192 52 43; --sb-500: 204 64 56; --sb-600: 212 82 74; --sb-700: 246 207 204; --sb-800: 249 224 222; --sb-900: 252 239 238; --sb-950: 254 247 246;
+      --tint-east: #c0342b1f;
+      --tint-desert: #b86e001f;
+      --tint-asia: #2f7a521f;
+      --canvas-bg: #0b0f0b;
     }
     * { box-sizing: border-box; }
+    html { scrollbar-color: rgb(var(--n-600)) rgb(var(--n-900)); }
     body {
       background-color: var(--background);
       color: var(--foreground);
-      font-family: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      font-family: "IBM Plex Sans", sans-serif;
+      font-size: 16px;
+      line-height: 1.5;
+      caret-color: var(--accent);
     }
+    ::selection { background: rgb(var(--acc-400) / 0.3); }
+    :focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+    .tabular-nums, [data-num] { font-variant-numeric: tabular-nums; }
     .custom-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
-    .custom-scroll::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.3); }
-    .custom-scroll::-webkit-scrollbar-thumb { background: rgba(148, 163, 184, 0.5); border-radius: 9999px; }
-    .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgba(245, 158, 11, 0.8); }
+    .custom-scroll::-webkit-scrollbar-track { background: rgb(var(--n-900) / 0.3); }
+    .custom-scroll::-webkit-scrollbar-thumb { background: rgb(var(--n-600) / 0.6); border-radius: 9999px; }
+    .custom-scroll::-webkit-scrollbar-thumb:hover { background: rgb(var(--acc-400) / 0.8); }
     canvas { user-select: none; }
 
     /* 2d-panning modern web guidance: unrestricted 2D scroll container without axis-locking railing */
@@ -47,7 +107,7 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
       overscroll-behavior: none;
     }
     .pan-viewport:focus-visible {
-      outline: 3px solid #38bdf8;
+      outline: 2px solid var(--focus);
       outline-offset: 2px;
     }
     @supports not (scroll-axis-lock: none) {
@@ -79,7 +139,7 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
               <h1 class="text-base sm:text-lg font-extrabold tracking-tight text-[var(--foreground)]">
                 World Tank Atlas (1916–2026): Area World Map, 85 Real Tank Photos &amp; Historical Destruction Simulator
               </h1>
-              <a href="index.html" class="px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40 hover:bg-sky-500/30 transition">
+              <a href="index.html" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-sky-500/20 text-sky-300 border border-sky-500/40 hover:bg-sky-500/30 transition">
                 ⇄ Switch to Sci-Fi &amp; Armor Hub (index.html)
               </a>
             </div>
@@ -458,21 +518,21 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
           <div class="bg-slate-900/90 border border-cyan-500/40 rounded-lg p-3 flex flex-col justify-between gap-2">
             <div>
               <div class="text-xs font-bold text-cyan-300">1. Lang Vei (1968) &amp; Ben Het (1969)</div>
-              <p class="text-[11px] text-slate-300 mt-1">In Feb 1968, 13 NVA <button onclick="openTankPopup('pt76')" class="text-amber-300 underline font-semibold">PT-76</button> tanks overran the US Green Beret camp at Lang Vei. On March 3, 1969 at <strong>Ben Het</strong>, US Army <button onclick="openTankPopup('m48_m60_patton')" class="text-amber-300 underline font-semibold">M48A3 Pattons</button> fought the <strong>only US-vs-NVA tank-on-tank night duel</strong> of the war, destroying 2 PT-76s by firing at their muzzle flashes.</p>
+              <p class="text-xs text-slate-300 mt-1">In Feb 1968, 13 NVA <button onclick="openTankPopup('pt76')" class="text-amber-300 underline font-semibold">PT-76</button> tanks overran the US Green Beret camp at Lang Vei. On March 3, 1969 at <strong>Ben Het</strong>, US Army <button onclick="openTankPopup('m48_m60_patton')" class="text-amber-300 underline font-semibold">M48A3 Pattons</button> fought the <strong>only US-vs-NVA tank-on-tank night duel</strong> of the war, destroying 2 PT-76s by firing at their muzzle flashes.</p>
             </div>
             <button onclick="openBattlePage('lang_vei_ben_het_1968')" class="px-2.5 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold text-center">🎬 Open Battle Page &amp; Simulation</button>
           </div>
           <div class="bg-slate-900/90 border border-cyan-500/40 rounded-lg p-3 flex flex-col justify-between gap-2">
             <div>
               <div class="text-xs font-bold text-cyan-300">2. Operation Lam Son 719 (1971) &amp; Easter Offensive (1972)</div>
-              <p class="text-[11px] text-slate-300 mt-1">In 1971, ARVN <button onclick="openTankPopup('m41_bulldog')" class="text-amber-300 underline font-semibold">M41 Walker Bulldogs</button> destroyed 6 T-54s &amp; 16 PT-76s in Laos. In April–June 1972 at <strong>Dong Ha, Kontum &amp; An Loc</strong>, 400+ NVA <button onclick="openTankPopup('t54_55')" class="text-amber-300 underline font-semibold">T-54</button> &amp; <button onclick="openTankPopup('type59_69')" class="text-amber-300 underline font-semibold">Type 59</button> tanks clashed with ARVN 20th Tank Regiment M48A3s at 2,800m and the first combat BGM-71 TOW missiles.</p>
+              <p class="text-xs text-slate-300 mt-1">In 1971, ARVN <button onclick="openTankPopup('m41_bulldog')" class="text-amber-300 underline font-semibold">M41 Walker Bulldogs</button> destroyed 6 T-54s &amp; 16 PT-76s in Laos. In April–June 1972 at <strong>Dong Ha, Kontum &amp; An Loc</strong>, 400+ NVA <button onclick="openTankPopup('t54_55')" class="text-amber-300 underline font-semibold">T-54</button> &amp; <button onclick="openTankPopup('type59_69')" class="text-amber-300 underline font-semibold">Type 59</button> tanks clashed with ARVN 20th Tank Regiment M48A3s at 2,800m and the first combat BGM-71 TOW missiles.</p>
             </div>
             <button onclick="openBattlePage('an_loc_dong_ha_1972')" class="px-2.5 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold text-center">🎬 Open Battle Page &amp; Simulation</button>
           </div>
           <div class="bg-slate-900/90 border border-cyan-500/40 rounded-lg p-3 flex flex-col justify-between gap-2">
             <div>
               <div class="text-xs font-bold text-cyan-300">3. Battle of Xuan Loc &amp; Fall of Saigon (April 1975)</div>
-              <p class="text-[11px] text-slate-300 mt-1">Five NVA corps (~600 tanks) spearheaded the Ho Chi Minh Campaign. After fierce tank clashes against ARVN M48A3s and M41s at <strong>Xuan Loc</strong>, NVA <button onclick="openTankPopup('t54_55')" class="text-amber-300 underline font-semibold">T-54B #843</button> and <button onclick="openTankPopup('type59_69')" class="text-amber-300 underline font-semibold">Type 59 #390</button> crashed through the gates of Independence Palace on April 30, 1975.</p>
+              <p class="text-xs text-slate-300 mt-1">Five NVA corps (~600 tanks) spearheaded the Ho Chi Minh Campaign. After fierce tank clashes against ARVN M48A3s and M41s at <strong>Xuan Loc</strong>, NVA <button onclick="openTankPopup('t54_55')" class="text-amber-300 underline font-semibold">T-54B #843</button> and <button onclick="openTankPopup('type59_69')" class="text-amber-300 underline font-semibold">Type 59 #390</button> crashed through the gates of Independence Palace on April 30, 1975.</p>
             </div>
             <button onclick="openBattlePage('xuan_loc_saigon_1975')" class="px-2.5 py-1.5 rounded bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-bold text-center">🎬 Open Battle Page &amp; Simulation</button>
           </div>

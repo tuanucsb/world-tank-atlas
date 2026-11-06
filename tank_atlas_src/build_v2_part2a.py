@@ -224,7 +224,7 @@ JS_PART_2A = r"""
             <div class="h-60 sm:h-64 w-full flex items-center justify-center bg-slate-950 overflow-hidden relative">
               <img src="${t.image_url}" alt="${t.name}" class="w-full h-full object-contain" />
             </div>
-            <div class="px-3 py-2 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-300">
+            <div class="px-3 py-2 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
               <span>📸 Real Historical Photograph: <strong>${t.name}</strong></span>
               <a href="${t.image_url}" target="_blank" rel="noopener noreferrer" class="text-amber-400 hover:underline font-bold">Full Photo ↗</a>
             </div>
@@ -233,7 +233,7 @@ JS_PART_2A = r"""
             <div class="h-60 sm:h-64 w-full flex items-center justify-center p-2">
               ${typeof buildTankBlueprintSVG === 'function' ? buildTankBlueprintSVG(t) : ''}
             </div>
-            <div class="px-3 py-2 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-[11px] text-slate-300">
+            <div class="px-3 py-2 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
               <span>📐 Scaled Engineering Profile</span>
               <span class="font-mono text-emerald-400">${t.weight_t}t • ${t.armor_mm}mm RHAe • ${t.speed_kmh} km/h</span>
             </div>
@@ -245,19 +245,19 @@ JS_PART_2A = r"""
         <!-- Key Specs Grid -->
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs">
           <div class="bg-slate-950 border border-slate-800 rounded-lg p-2.5">
-            <div class="text-[10px] text-slate-400 uppercase font-bold">Primary Armament</div>
+            <div class="text-xs text-slate-400 uppercase font-bold">Primary Armament</div>
             <div class="font-extrabold text-white mt-0.5">${t.gun}</div>
           </div>
           <div class="bg-slate-950 border border-slate-800 rounded-lg p-2.5">
-            <div class="text-[10px] text-slate-400 uppercase font-bold">Frontal Armor</div>
+            <div class="text-xs text-slate-400 uppercase font-bold">Frontal Armor</div>
             <div class="font-extrabold text-amber-400 mt-0.5">${t.armor_mm} mm RHAe</div>
           </div>
           <div class="bg-slate-950 border border-slate-800 rounded-lg p-2.5">
-            <div class="text-[10px] text-slate-400 uppercase font-bold">Weight &amp; Mobility</div>
+            <div class="text-xs text-slate-400 uppercase font-bold">Weight &amp; Mobility</div>
             <div class="font-extrabold text-emerald-400 mt-0.5">${t.weight_t}t • ${t.speed_kmh} km/h (${t.power_hp} hp)</div>
           </div>
           <div class="bg-slate-950 border border-slate-800 rounded-lg p-2.5">
-            <div class="text-[10px] text-slate-400 uppercase font-bold">Crew &amp; Production</div>
+            <div class="text-xs text-slate-400 uppercase font-bold">Crew &amp; Production</div>
             <div class="font-extrabold text-sky-400 mt-0.5">${t.crew} Crew • ~${t.produced.toLocaleString()} Built</div>
           </div>
         </div>
@@ -270,11 +270,11 @@ JS_PART_2A = r"""
               <div class="p-2 rounded-lg bg-slate-950 border border-slate-800 flex items-center justify-between gap-2">
                 <div>
                   <div class="font-bold text-white">${b.name} (${b.year})</div>
-                  <div class="text-[10px] text-slate-400">${b.total_tanks}</div>
+                  <div class="text-xs text-slate-400">${b.total_tanks}</div>
                 </div>
                 <div class="flex items-center gap-1 shrink-0">
-                  <button onclick="closeTankPopup(); jumpToBattleOnMap('${b.id}')" class="px-2 py-1 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300 text-[10px] font-bold">📍 Map</button>
-                  <button onclick="closeTankPopup(); openBattlePage('${b.id}')" class="px-2 py-1 rounded bg-rose-600 text-white text-[10px] font-bold">🎬 Sim</button>
+                  <button onclick="closeTankPopup(); jumpToBattleOnMap('${b.id}')" class="px-2 py-1 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300 text-xs font-bold">📍 Map</button>
+                  <button onclick="closeTankPopup(); openBattlePage('${b.id}')" class="px-2 py-1 rounded bg-rose-600 text-white text-xs font-bold">🎬 Sim</button>
                 </div>
               </div>
             `).join('') : '<div class="text-slate-400">Deterrence, evaluation, or secondary sectors.</div>'}
@@ -289,10 +289,10 @@ JS_PART_2A = r"""
                     <img src="${c.tank.image_url}" alt="${c.tank.name}" class="w-10 h-7 rounded object-cover bg-slate-900 border border-slate-700 shrink-0" />
                     <div>
                       <div class="font-bold text-rose-300">⚔️ ${NATION_MAP[c.tank.nation]?.flag || ''} ${c.tank.name} (${c.tank.year})</div>
-                      <div class="text-[10px] text-slate-400 line-clamp-1">${c.label}</div>
+                      <div class="text-xs text-slate-400 line-clamp-1">${c.label}</div>
                     </div>
                   </div>
-                  <span class="text-[10px] font-bold text-amber-300 shrink-0">Popup →</span>
+                  <span class="text-xs font-bold text-amber-300 shrink-0">Popup →</span>
                 </button>
               `).join('')}
             </div>` : '<div class="text-slate-400">No direct tank duel in dataset.</div>'}
@@ -367,7 +367,7 @@ JS_PART_2A = r"""
         const active = state.eraFilter === e.id;
         return `<button onclick="toggleEraFilter(${e.id})" class="text-left p-2 rounded-lg border transition ${active ? 'border-amber-400 bg-amber-500/25 shadow' : 'border-[var(--border)] bg-[var(--background)]/70 hover:border-amber-500/60'}">
           <div class="text-xs font-extrabold ${active ? 'text-amber-300' : 'text-[var(--foreground)]'} truncate">${e.short}</div>
-          <div class="text-[10px] text-[var(--muted-foreground)] truncate mt-0.5">${e.desc}</div>
+          <div class="text-xs text-[var(--muted-foreground)] truncate mt-0.5">${e.desc}</div>
         </button>`;
       }).join('');
     }
@@ -561,7 +561,7 @@ JS_PART_2A = r"""
             <div class="sm:col-span-7 flex flex-col gap-1.5">
               <p class="text-xs text-[var(--foreground)] leading-relaxed line-clamp-3">${t.summary}</p>
               <div class="flex flex-wrap gap-1.5 pt-1">
-                <button onclick="openTankPage('${t.id}')" class="px-2 py-1 rounded bg-sky-500/20 border border-sky-500/50 text-sky-300 text-[11px] font-bold hover:bg-sky-500/30">
+                <button onclick="openTankPage('${t.id}')" class="px-2 py-1 rounded bg-sky-500/20 border border-sky-500/50 text-sky-300 text-xs font-bold hover:bg-sky-500/30">
                   📸 View High-Res Photo, Blueprint &amp; Videos
                 </button>
               </div>
@@ -572,15 +572,15 @@ JS_PART_2A = r"""
         <!-- Technical Specs Grid -->
         <div class="grid grid-cols-3 gap-2 text-xs">
           <div class="bg-[var(--background)] border border-[var(--border)] rounded-lg p-2.5">
-            <div class="text-[10px] text-[var(--muted-foreground)] uppercase font-bold">Main Gun</div>
+            <div class="text-xs text-[var(--muted-foreground)] uppercase font-bold">Main Gun</div>
             <div class="font-bold text-[var(--foreground)] mt-0.5 leading-snug">${t.gun}</div>
           </div>
           <div class="bg-[var(--background)] border border-[var(--border)] rounded-lg p-2.5">
-            <div class="text-[10px] text-[var(--muted-foreground)] uppercase font-bold">Frontal Armor</div>
+            <div class="text-xs text-[var(--muted-foreground)] uppercase font-bold">Frontal Armor</div>
             <div class="font-bold text-amber-400 mt-0.5">${t.armor_mm} mm RHAe</div>
           </div>
           <div class="bg-[var(--background)] border border-[var(--border)] rounded-lg p-2.5">
-            <div class="text-[10px] text-[var(--muted-foreground)] uppercase font-bold">Weight / Speed</div>
+            <div class="text-xs text-[var(--muted-foreground)] uppercase font-bold">Weight / Speed</div>
             <div class="font-bold text-emerald-400 mt-0.5">${t.weight_t}t • ${t.speed_kmh} km/h</div>
           </div>
         </div>
@@ -593,11 +593,11 @@ JS_PART_2A = r"""
               <div class="p-2 rounded-lg bg-[var(--card)] border border-[var(--border)] flex flex-wrap items-center justify-between gap-2">
                 <div>
                   <div class="text-xs font-bold text-[var(--foreground)]">${b.name} (${b.year})</div>
-                  <div class="text-[10px] text-emerald-400 font-semibold">🏆 Winner: ${b.winner}</div>
+                  <div class="text-xs text-emerald-400 font-semibold">🏆 Winner: ${b.winner}</div>
                 </div>
                 <div class="flex items-center gap-1">
-                  <button onclick="jumpToBattleOnMap('${b.id}')" class="px-2 py-1 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300 text-[10px] font-bold hover:bg-amber-500/30">🌍 Map Popup</button>
-                  <button onclick="openBattlePage('${b.id}')" class="px-2 py-1 rounded bg-rose-600 text-white text-[10px] font-bold hover:bg-rose-500">🎬 Battle Page &amp; Sim</button>
+                  <button onclick="jumpToBattleOnMap('${b.id}')" class="px-2 py-1 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300 text-xs font-bold hover:bg-amber-500/30">🌍 Map Popup</button>
+                  <button onclick="openBattlePage('${b.id}')" class="px-2 py-1 rounded bg-rose-600 text-white text-xs font-bold hover:bg-rose-500">🎬 Battle Page &amp; Sim</button>
                 </div>
               </div>
             `).join('')}
@@ -608,7 +608,7 @@ JS_PART_2A = r"""
         <div class="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3.5 flex flex-col gap-2">
           <div class="flex items-center justify-between">
             <span class="text-xs font-extrabold text-rose-400 uppercase tracking-wider">⚔️ Fought Against (${combats.length} Rivals)</span>
-            <button onclick="state.duelA='${t.id}'; state.duelB='${combats[0]?.tank?.id || 'tiger_i'}'; switchMainView('duel')" class="px-2 py-0.5 rounded bg-rose-600 text-white text-[11px] font-bold hover:bg-rose-500">
+            <button onclick="state.duelA='${t.id}'; state.duelB='${combats[0]?.tank?.id || 'tiger_i'}'; switchMainView('duel')" class="px-2 py-0.5 rounded bg-rose-600 text-white text-xs font-bold hover:bg-rose-500">
               ⚔️ Compare in Duel View
             </button>
           </div>
@@ -618,11 +618,11 @@ JS_PART_2A = r"""
                 <button onclick="selectTank('${c.tank.id}')" class="text-xs font-bold text-rose-300 hover:underline text-left">
                   ⚔️ vs. ${NATION_MAP[c.tank.nation].flag} ${c.tank.name} (${c.tank.year})
                 </button>
-                <button onclick="openTankPage('${c.tank.id}')" class="px-2 py-0.5 rounded bg-sky-500/20 border border-sky-500/40 text-[10px] text-sky-300 font-bold hover:bg-sky-500/30">
+                <button onclick="openTankPage('${c.tank.id}')" class="px-2 py-0.5 rounded bg-sky-500/20 border border-sky-500/40 text-xs text-sky-300 font-bold hover:bg-sky-500/30">
                   📄 Tank Page
                 </button>
               </div>
-              <div class="text-[11px] text-[var(--muted-foreground)]">${c.label}</div>
+              <div class="text-xs text-[var(--muted-foreground)]">${c.label}</div>
             </div>
           `).join('') : '<div class="text-xs text-[var(--muted-foreground)]">No direct tank-on-tank duel in dataset.</div>'}
         </div>
@@ -632,20 +632,20 @@ JS_PART_2A = r"""
           <div class="text-xs font-extrabold text-emerald-400 uppercase tracking-wider">🟢 Lineage &amp; Evolutionary Chain</div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <div class="text-[11px] font-bold text-[var(--muted-foreground)] mb-1">⬅️ Evolved From:</div>
+              <div class="text-xs font-bold text-[var(--muted-foreground)] mb-1">⬅️ Evolved From:</div>
               ${parents.length ? parents.map(p => `
                 <div class="p-2 rounded bg-[var(--card)] border border-[var(--border)] mb-1 flex items-center justify-between gap-1">
                   <button onclick="selectTank('${p.tank.id}')" class="text-left text-xs font-bold text-emerald-300 hover:underline">${NATION_MAP[p.tank.nation].flag} ${p.tank.name}</button>
-                  <button onclick="openTankPage('${p.tank.id}')" class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Page →</button>
+                  <button onclick="openTankPage('${p.tank.id}')" class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-bold">Page →</button>
                 </div>
               `).join('') : '<div class="text-xs text-[var(--muted-foreground)] italic">Foundational 1st-Gen Design</div>'}
             </div>
             <div>
-              <div class="text-[11px] font-bold text-[var(--muted-foreground)] mb-1">➡️ Evolved Into:</div>
+              <div class="text-xs font-bold text-[var(--muted-foreground)] mb-1">➡️ Evolved Into:</div>
               ${children.length ? children.map(c => `
                 <div class="p-2 rounded bg-[var(--card)] border border-[var(--border)] mb-1 flex items-center justify-between gap-1">
                   <button onclick="selectTank('${c.tank.id}')" class="text-left text-xs font-bold text-emerald-300 hover:underline">${NATION_MAP[c.tank.nation].flag} ${c.tank.name}</button>
-                  <button onclick="openTankPage('${c.tank.id}')" class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold">Page →</button>
+                  <button onclick="openTankPage('${c.tank.id}')" class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-xs font-bold">Page →</button>
                 </div>
               `).join('') : '<div class="text-xs text-[var(--muted-foreground)] italic">Current-Gen Pinnacle</div>'}
             </div>
@@ -1117,15 +1117,15 @@ JS_PART_2A = r"""
         return `<div onclick="openTankPopup('${t.id}')" class="flex items-center gap-2 p-1.5 rounded-lg bg-slate-900/95 hover:bg-slate-800 border ${borderCls} cursor-pointer transition group" title="Click to open interactive Tank Popup for ${t.name}">
           <img src="${t.photo_url}" alt="${t.name}" class="w-11 h-8 object-cover rounded border border-slate-700 shrink-0" loading="lazy" />
           <div class="min-w-0 flex-1">
-            <div class="text-[11px] font-extrabold text-white group-hover:text-amber-300 truncate">${NATION_MAP[t.nation]?.flag || ''} ${t.name}</div>
-            <div class="text-[9.5px] text-slate-400 truncate">${t.gun} • ${t.armor_mm}mm</div>
+            <div class="text-xs font-extrabold text-white group-hover:text-amber-300 truncate">${NATION_MAP[t.nation]?.flag || ''} ${t.name}</div>
+            <div class="text-xs text-slate-400 truncate">${t.gun} • ${t.armor_mm}mm</div>
           </div>
-          <span class="text-[10px] font-extrabold text-amber-400 shrink-0">🔍</span>
+          <span class="text-xs font-extrabold text-amber-400 shrink-0">🔍</span>
         </div>`;
       }).join('');
 
       const destA = (b.destruction_a || []).slice(0, 3).map(d => `
-        <div class="text-[10px] flex items-center justify-between gap-1 text-slate-200">
+        <div class="text-xs flex items-center justify-between gap-1 text-slate-200">
           <span class="truncate">• ${d.cause}</span>
           <span class="font-mono font-bold text-rose-300 shrink-0">${d.Share || d.count} (${d.pct}%)</span>
         </div>
@@ -1134,9 +1134,9 @@ JS_PART_2A = r"""
       pop.innerHTML = `
         <div class="flex items-start justify-between gap-2 border-b border-slate-700 pb-2">
           <div>
-            <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-amber-500 text-slate-950">${b.date} • ${b.theatre}</span>
+            <span class="px-2 py-0.5 rounded text-xs font-extrabold bg-amber-500 text-slate-950">${b.date} • ${b.theatre}</span>
             <h3 class="text-base font-extrabold text-white mt-1">${b.name}</h3>
-            <p class="text-[11px] text-slate-300">📍 ${b.location}</p>
+            <p class="text-xs text-slate-300">📍 ${b.location}</p>
           </div>
           <button onclick="closeMapPopup()" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 font-bold">✕</button>
         </div>
@@ -1144,11 +1144,11 @@ JS_PART_2A = r"""
         <!-- Winner & Loser Callout Box -->
         <div class="grid grid-cols-1 gap-1 bg-slate-950/90 p-2 rounded-lg border border-slate-700 text-xs">
           <div class="flex items-start gap-1.5">
-            <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold text-[10px] shrink-0">🏆 WINNER</span>
+            <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold text-xs shrink-0">🏆 WINNER</span>
             <span class="font-bold text-emerald-300">${b.winner}</span>
           </div>
           <div class="flex items-start gap-1.5">
-            <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-extrabold text-[10px] shrink-0">💥 DEFEATED</span>
+            <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-extrabold text-xs shrink-0">💥 DEFEATED</span>
             <span class="font-semibold text-rose-300">${b.loser}</span>
           </div>
         </div>
@@ -1156,7 +1156,7 @@ JS_PART_2A = r"""
         <!-- How Many Involved & Losses -->
         <div class="bg-amber-500/15 border border-amber-500/40 rounded-lg p-2 text-xs">
           <div class="font-extrabold text-amber-300">📊 How Many Tanks Involved: ${b.total_tanks}</div>
-          <div class="grid grid-cols-2 gap-2 mt-1.5 pt-1.5 border-t border-amber-500/25 text-[11px]">
+          <div class="grid grid-cols-2 gap-2 mt-1.5 pt-1.5 border-t border-amber-500/25 text-xs">
             <div>
               <div class="font-bold text-sky-300">🟦 ${b.side_a.flag || ''} ${b.side_a.name}</div>
               <div class="text-slate-200">Strength: <strong>${b.side_a.count}</strong></div>
@@ -1172,14 +1172,14 @@ JS_PART_2A = r"""
 
         <!-- Multiple Participating Tanks with Real Photos (Click Any Tank for Popup!) -->
         <div class="flex flex-col gap-1.5">
-          <div class="text-[10px] font-extrabold text-amber-300 uppercase">🛡️ Participating Tanks (${b.side_a.tanks.length + b.side_b.tanks.length} Models — Click Any Tank for Popup):</div>
+          <div class="text-xs font-extrabold text-amber-300 uppercase">🛡️ Participating Tanks (${b.side_a.tanks.length + b.side_b.tanks.length} Models — Click Any Tank for Popup):</div>
           <div class="grid grid-cols-2 gap-1.5">
             <div class="flex flex-col gap-1">
-              <div class="text-[9.5px] font-bold text-sky-300 uppercase">🟦 Side A Tanks (${b.side_a.tanks.length})</div>
+              <div class="text-xs font-bold text-sky-300 uppercase">🟦 Side A Tanks (${b.side_a.tanks.length})</div>
               ${tankPhotoCards(b.side_a.tanks, 'border-sky-400/50')}
             </div>
             <div class="flex flex-col gap-1">
-              <div class="text-[9.5px] font-bold text-rose-300 uppercase">🟥 Side B Tanks (${b.side_b.tanks.length})</div>
+              <div class="text-xs font-bold text-rose-300 uppercase">🟥 Side B Tanks (${b.side_b.tanks.length})</div>
               ${tankPhotoCards(b.side_b.tanks, 'border-rose-400/50')}
             </div>
           </div>
@@ -1189,35 +1189,35 @@ JS_PART_2A = r"""
         ${b.real_map_url ? `
         <div class="bg-slate-950/90 border border-amber-500/40 rounded-lg p-2 flex flex-col gap-1.5">
           <div class="flex items-center justify-between">
-            <span class="text-[10px] font-extrabold text-amber-300 uppercase">🗺️ Real Historical Battle Map</span>
-            <button onclick="openBattlePage('${b.id}')" class="text-[9.5px] font-bold text-sky-300 hover:underline">Open Full Interactive Map →</button>
+            <span class="text-xs font-extrabold text-amber-300 uppercase">🗺️ Real Historical Battle Map</span>
+            <button onclick="openBattlePage('${b.id}')" class="text-xs font-bold text-sky-300 hover:underline">Open Full Interactive Map →</button>
           </div>
           <img src="${b.real_map_url}" alt="${b.name} Map" onclick="openBattlePage('${b.id}')" class="w-full h-32 object-cover rounded border border-slate-700 cursor-pointer hover:opacity-95 transition" loading="lazy" />
-          <div class="text-[9.5px] text-slate-400 leading-snug">${b.real_map_caption || ''}</div>
+          <div class="text-xs text-slate-400 leading-snug">${b.real_map_caption || ''}</div>
         </div>` : ''}
 
         <!-- Forensic Destruction Breakdown Preview -->
         ${destA ? `
         <div class="bg-rose-950/50 border border-rose-500/40 rounded-lg p-2 flex flex-col gap-1">
-          <div class="text-[10px] font-extrabold text-rose-300 uppercase">💥 How the Tanks Got Destroyed (Primary Causes):</div>
+          <div class="text-xs font-extrabold text-rose-300 uppercase">💥 How the Tanks Got Destroyed (Primary Causes):</div>
           ${destA}
         </div>` : ''}
 
         <!-- Real Knocked-Out Tank Wreckage Photos Preview -->
         ${(b.wreckage_photos && b.wreckage_photos.length) ? `
         <div class="bg-slate-950/90 border border-rose-500/40 rounded-lg p-2 flex flex-col gap-1.5">
-          <div class="text-[10px] font-extrabold text-rose-300 uppercase">🔥 Real Knocked-Out Tank Wreckage (${b.wreckage_photos.length} Archival Photos):</div>
+          <div class="text-xs font-extrabold text-rose-300 uppercase">🔥 Real Knocked-Out Tank Wreckage (${b.wreckage_photos.length} Archival Photos):</div>
           <div class="grid grid-cols-2 gap-1.5">
             ${b.wreckage_photos.slice(0, 2).map(w => `
               <div onclick="openBattlePage('${b.id}')" class="bg-slate-900 border border-slate-700 rounded p-1 cursor-pointer hover:border-rose-400 transition">
                 <img src="${w.url}" alt="${w.title}" class="w-full h-16 object-cover rounded" loading="lazy" />
-                <div class="text-[9px] font-bold text-rose-200 truncate mt-0.5">${w.title}</div>
+                <div class="text-xs font-bold text-rose-200 truncate mt-0.5">${w.title}</div>
               </div>
             `).join('')}
           </div>
         </div>` : ''}
 
-        <p class="text-[11px] text-slate-200 leading-relaxed">${b.summary}</p>
+        <p class="text-xs text-slate-200 leading-relaxed">${b.summary}</p>
 
         <div class="grid grid-cols-2 gap-1.5 pt-1">
           <button onclick="openBattlePage('${b.id}')" class="px-2.5 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-extrabold shadow text-center">
@@ -1539,7 +1539,7 @@ JS_PART_2A = r"""
               ? 'bg-amber-500 text-slate-950 border-amber-300 font-extrabold shadow'
               : (isVN ? 'bg-cyan-950/90 border-cyan-500/60 text-cyan-200 hover:border-cyan-300' : 'bg-slate-900 border-slate-700 text-slate-300 hover:text-white')
           }">
-            <div class="text-[10px] font-mono font-bold ${active ? 'text-slate-900' : (isVN ? 'text-cyan-300' : 'text-rose-400')}">${b.year} • ${b.theatre}</div>
+            <div class="text-xs font-mono font-bold ${active ? 'text-slate-900' : (isVN ? 'text-cyan-300' : 'text-rose-400')}">${b.year} • ${b.theatre}</div>
             <div class="text-xs font-bold whitespace-nowrap">${b.name.replace('Battle of ', '')}</div>
           </button>
         `;
@@ -1555,11 +1555,11 @@ JS_PART_2A = r"""
           <div onclick="openTankPopup('${t.id}')" class="shrink-0 w-36 rounded-lg bg-slate-950 border border-slate-700 hover:border-amber-400 p-1.5 cursor-pointer transition group flex flex-col gap-1 shadow" title="Click to open interactive Tank Popup for ${t.name}">
             <div class="relative w-full h-20 rounded overflow-hidden bg-slate-900 border border-slate-800">
               <img src="${t.photo_url}" alt="${t.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-200" loading="lazy" />
-              <span class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-slate-950/85 text-[9px] font-mono font-bold text-amber-300">${t.year}</span>
-              <span class="absolute bottom-1 right-1 px-1 py-0.5 rounded bg-slate-950/85 text-[9px] font-bold text-slate-200">${t.weight_t}t</span>
+              <span class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-slate-950/85 text-xs font-mono font-bold text-amber-300">${t.year}</span>
+              <span class="absolute bottom-1 right-1 px-1 py-0.5 rounded bg-slate-950/85 text-xs font-bold text-slate-200">${t.weight_t}t</span>
             </div>
-            <div class="text-[11px] font-extrabold text-white group-hover:text-amber-300 truncate">${nat.flag} ${t.name}</div>
-            <div class="text-[9.5px] text-slate-400 truncate">${t.gun} • ${t.armor_mm}mm</div>
+            <div class="text-xs font-extrabold text-white group-hover:text-amber-300 truncate">${nat.flag} ${t.name}</div>
+            <div class="text-xs text-slate-400 truncate">${t.gun} • ${t.armor_mm}mm</div>
           </div>
         `;
       }).join('');
@@ -1592,9 +1592,9 @@ JS_PART_2A = r"""
             <img src="${t.photo_url}" alt="${t.name}" class="w-16 h-11 object-cover rounded border border-slate-700 shrink-0" loading="lazy" />
             <div class="min-w-0 flex-1">
               <div class="text-xs font-extrabold text-[var(--foreground)] group-hover:text-amber-300 truncate">${NATION_MAP[t.nation]?.flag || ''} ${t.name} (${t.year})</div>
-              <div class="text-[10px] text-[var(--muted-foreground)] truncate">${t.gun} • ${t.armor_mm}mm • ${t.weight_t}t</div>
+              <div class="text-xs text-[var(--muted-foreground)] truncate">${t.gun} • ${t.armor_mm}mm • ${t.weight_t}t</div>
             </div>
-            <button onclick="event.stopPropagation(); openTankPopup('${t.id}')" class="px-2 py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 text-[10px] font-extrabold shrink-0">
+            <button onclick="event.stopPropagation(); openTankPopup('${t.id}')" class="px-2 py-1 rounded bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold shrink-0">
               🔍 Popup
             </button>
           </div>`;
@@ -1604,7 +1604,7 @@ JS_PART_2A = r"""
         if (!items || !items.length) return '';
         return `
           <div class="flex flex-col gap-1.5">
-            <div class="text-[11px] font-extrabold text-slate-200">${sideLabel}</div>
+            <div class="text-xs font-extrabold text-slate-200">${sideLabel}</div>
             ${items.map(d => `
               <div class="p-2 rounded-lg bg-slate-950/90 border border-slate-800 flex flex-col gap-1">
                 <div class="flex items-center justify-between gap-2 text-xs">
@@ -1614,7 +1614,7 @@ JS_PART_2A = r"""
                 <div class="w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
                   <div class="h-full ${barColor}" style="width:${Math.min(100, d.pct)}%"></div>
                 </div>
-                <div class="text-[10.5px] text-slate-300 leading-snug">${d.detail}</div>
+                <div class="text-xs text-slate-300 leading-snug">${d.detail}</div>
               </div>
             `).join('')}
           </div>
@@ -1627,17 +1627,17 @@ JS_PART_2A = r"""
           <div class="bg-[var(--background)] border border-amber-500/40 rounded-xl p-3 flex flex-col gap-2">
             <div class="flex items-center justify-between">
               <div class="text-xs font-extrabold text-amber-400 uppercase">⏱️ 5-Phase Battle Timeline &amp; Destruction</div>
-              <button onclick="openBattlePage('${b.id}')" class="text-[10px] font-extrabold text-rose-400 hover:underline">Run Full Sim →</button>
+              <button onclick="openBattlePage('${b.id}')" class="text-xs font-extrabold text-rose-400 hover:underline">Run Full Sim →</button>
             </div>
             <div class="flex flex-col gap-1.5">
               ${b.phases.map((p, idx) => `
                 <div onclick="openBattlePageAtPhase('${b.id}', ${idx})" class="p-2 rounded-lg bg-slate-950/90 hover:bg-slate-900 border border-slate-800 hover:border-amber-400/60 cursor-pointer transition flex flex-col gap-0.5">
-                  <div class="flex items-center justify-between gap-1 text-[10px] font-mono font-bold text-amber-300">
+                  <div class="flex items-center justify-between gap-1 text-xs font-mono font-bold text-amber-300">
                     <span>${p.phase}: ${p.time}</span>
                     <span>▶ Sim</span>
                   </div>
                   <div class="text-xs font-extrabold text-white">${p.title}</div>
-                  <div class="text-[10.5px] text-rose-300 font-semibold">💥 ${p.losses_note}</div>
+                  <div class="text-xs text-rose-300 font-semibold">💥 ${p.losses_note}</div>
                 </div>
               `).join('')}
             </div>
@@ -1680,7 +1680,7 @@ JS_PART_2A = r"""
           <div class="bg-sky-500/10 border border-sky-500/30 rounded-xl p-3 flex flex-col gap-2">
             <div class="flex items-center justify-between text-xs">
               <span class="font-extrabold text-sky-400">🟦 ${b.side_a.flag || ''} ${b.side_a.name}</span>
-              <span class="text-[11px] font-bold text-rose-300">Losses: ${b.losses_a}</span>
+              <span class="text-xs font-bold text-rose-300">Losses: ${b.losses_a}</span>
             </div>
             <div class="text-xs text-[var(--foreground)] font-semibold">Strength: ${b.side_a.count}</div>
             <div class="flex flex-col gap-1.5">
@@ -1691,7 +1691,7 @@ JS_PART_2A = r"""
           <div class="bg-rose-500/10 border border-rose-500/30 rounded-xl p-3 flex flex-col gap-2">
             <div class="flex items-center justify-between text-xs">
               <span class="font-extrabold text-rose-400">🟥 ${b.side_b.flag || ''} ${b.side_b.name}</span>
-              <span class="text-[11px] font-bold text-rose-300">Losses: ${b.losses_b}</span>
+              <span class="text-xs font-bold text-rose-300">Losses: ${b.losses_b}</span>
             </div>
             <div class="text-xs text-[var(--foreground)] font-semibold">Strength: ${b.side_b.count}</div>
             <div class="flex flex-col gap-1.5">
@@ -1705,13 +1705,13 @@ JS_PART_2A = r"""
         <div class="bg-[var(--background)] border border-amber-500/40 rounded-xl p-3.5 flex flex-col gap-2">
           <div class="flex items-center justify-between">
             <div class="text-xs font-extrabold text-amber-400 uppercase">🗺️ Real Historical Operational Battle Map</div>
-            <a href="${b.real_map_url}" target="_blank" rel="noopener" class="text-[10px] font-bold text-sky-400 hover:underline">Full-Res Map ↗</a>
+            <a href="${b.real_map_url}" target="_blank" rel="noopener" class="text-xs font-bold text-sky-400 hover:underline">Full-Res Map ↗</a>
           </div>
           <div class="grid ${b.real_map_alt_url ? 'grid-cols-2' : 'grid-cols-1'} gap-2">
             <img src="${b.real_map_url}" alt="${b.name} Historical Map" onclick="openBattlePage('${b.id}')" class="w-full h-36 object-cover rounded-lg border border-slate-700 cursor-pointer hover:border-amber-400 transition" loading="lazy" />
             ${b.real_map_alt_url ? `<img src="${b.real_map_alt_url}" alt="${b.name} Operational Map 2" onclick="openBattlePage('${b.id}')" class="w-full h-36 object-cover rounded-lg border border-slate-700 cursor-pointer hover:border-amber-400 transition" loading="lazy" />` : ''}
           </div>
-          <p class="text-[11px] text-[var(--muted-foreground)] leading-snug">${b.real_map_caption || ''}</p>
+          <p class="text-xs text-[var(--muted-foreground)] leading-snug">${b.real_map_caption || ''}</p>
         </div>` : ''}
 
         <!-- How the Tanks Got Destroyed Forensic Section -->
@@ -1731,7 +1731,7 @@ JS_PART_2A = r"""
                 <img src="${w.url}" alt="${w.title}" class="w-full h-36 object-cover border-b border-slate-800" loading="lazy" />
                 <div class="p-2.5">
                   <div class="text-xs font-extrabold text-rose-300">${w.title}</div>
-                  <p class="text-[11px] text-slate-300 mt-1 leading-relaxed">${w.how_destroyed}</p>
+                  <p class="text-xs text-slate-300 mt-1 leading-relaxed">${w.how_destroyed}</p>
                 </div>
               </div>
             `).join('')}
@@ -1745,9 +1745,9 @@ JS_PART_2A = r"""
           ${b.combat_videos.map(v => `
             <div class="bg-slate-950/90 border border-slate-800 rounded-lg p-2 flex flex-col gap-1.5">
               <div class="text-xs font-bold text-white">${v.title}</div>
-              <div class="text-[10px] text-slate-400">${v.source}</div>
+              <div class="text-xs text-slate-400">${v.source}</div>
               ${v.video_url ? `<video controls preload="metadata" class="w-full rounded border border-slate-700 bg-black max-h-48"><source src="${v.video_url}" /></video>` : ''}
-              ${v.yt_url ? `<a href="${v.yt_url}" target="_blank" rel="noopener" class="text-[11px] font-bold text-amber-400 hover:underline">▶ Watch Additional Historical Documentary Footage on YouTube ↗</a>` : ''}
+              ${v.yt_url ? `<a href="${v.yt_url}" target="_blank" rel="noopener" class="text-xs font-bold text-amber-400 hover:underline">▶ Watch Additional Historical Documentary Footage on YouTube ↗</a>` : ''}
             </div>
           `).join('')}
         </div>` : ''}
