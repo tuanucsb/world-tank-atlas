@@ -2297,6 +2297,7 @@ JS_PART_2B = r"""
       setupGraphCanvas();
       setupMapCanvas();
       setup2DPanningFallback();
+      applyRoute();
       requestAnimationFrame(tick);
     });
   </script>

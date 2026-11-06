@@ -228,6 +228,8 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
 
   <!-- Main Workspace Container -->
   <main class="flex-1 max-w-[1860px] w-full mx-auto p-4 flex flex-col gap-4">
+    <!-- Shown by the router when a link points at a battle or tank that doesn't exist -->
+    <div id="route-notice" role="status" class="hidden flex flex-col gap-1 rounded-[10px] border border-amber-400 bg-[var(--card)] p-4"></div>
 
     <!-- ===================================================================== -->
     <!-- VIEW 1 (DEFAULT): WORLD TANK BATTLES & 85 TANKS MAP + POPUPS          -->

@@ -341,7 +341,7 @@ finding above. Effort assumes features ~30x, architecture ~5x human:CC.
   - Surfaced by: Pass 1 (D3), Pass 4 (D11, D12), Pass 7 (D21).
   - Files: `tank_atlas_src/build_v2_part1.py`.
   - Verify: in the browser at 1440x900, header height is 56px plus a 40px filter row on Map only; title/h1 read "World Tank Atlas"; counts equal `len(TANKS)`/`len(BATTLES)`; switcher opens `../scifi-ai-atlas/index.html`.
-- [ ] **T3 (P1, human: ~1 day / CC: ~40min): router: hash routes for all views, battles and tanks.**
+- [x] **T3 (P1, human: ~1 day / CC: ~40min): router: hash routes for all views, battles and tanks.**
   - Surfaced by: Pass 3 (D9).
   - Files: `tank_atlas_src/build_v2_part2a.py`.
   - Verify: open battle → tank → Back → Back returns to battle, then the map; pasting `#/battles/raseiniai-1941` in a new tab opens it.

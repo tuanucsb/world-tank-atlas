@@ -456,7 +456,8 @@ JS_PART_2A = r"""
     // Views that use the era/nation filter row under the app bar
     const FILTERED_VIEWS = ['map', 'tank-page', 'graph'];
 
-    function switchMainView(view) {
+    // Renders a view. Call switchMainView() instead, which routes through the URL hash.
+    function showView(view) {
       state.mainView = view;
       ['graph', 'map', 'tank-page', 'battle-page', 'duel', 'matrix'].forEach(v => {
         const sec = document.getElementById('view-' + v);
@@ -483,17 +484,17 @@ JS_PART_2A = r"""
       if (view === 'matrix') renderCatalogAndMatrix();
     }
 
-    function openTankPage(tankId) {
+    function showTankPage(tankId) {
       if (TANK_MAP[tankId]) {
         state.selectedTankId = tankId;
       }
       const sel = document.getElementById('tank-page-select');
       if (sel) sel.value = state.selectedTankId;
-      switchMainView('tank-page');
+      showView('tank-page');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
-    function openBattlePage(battleId, initialProgress = 0.05) {
+    function showBattlePage(battleId, initialProgress = 0.05) {
       if (BATTLE_MAP[battleId]) {
         state.selectedBattleId = battleId;
       }
@@ -503,9 +504,100 @@ JS_PART_2A = r"""
       state.sim.playing = true;
       state.sim.logs = [];
       state.sim.lastPhaseLogged = -1;
-      switchMainView('battle-page');
+      showView('battle-page');
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
+
+    // =========================================================================
+    // ROUTER: the URL hash is the single owner of navigation.
+    // switchMainView / openTankPage / openBattlePage only change the hash;
+    // applyRoute() reads it and calls the show*() renderers. Routes use data ids:
+    //   #/map  #/battles  #/battles/<id>  #/tanks  #/tanks/<id>
+    //   #/lineage  #/compare  #/tech-tree
+    // =========================================================================
+    const VIEW_ROUTES = {
+      'map': 'map', 'battle-page': 'battles', 'tank-page': 'tanks',
+      'graph': 'lineage', 'duel': 'compare', 'matrix': 'tech-tree'
+    };
+    const ROUTE_VIEWS = Object.fromEntries(Object.entries(VIEW_ROUTES).map(([v, r]) => [r, v]));
+    let lastAppliedHash = null;
+    let pendingBattleProgress = null;
+
+    function navigate(hash) {
+      if (location.hash !== hash) location.hash = hash;
+      applyRoute();
+    }
+
+    function switchMainView(view) {
+      navigate('#/' + (VIEW_ROUTES[view] || 'map'));
+    }
+
+    function openTankPage(tankId) {
+      navigate('#/tanks/' + tankId);
+    }
+
+    function openBattlePage(battleId, initialProgress = 0.05) {
+      pendingBattleProgress = initialProgress;
+      navigate('#/battles/' + battleId);
+    }
+
+    function replaceRoute(hash) {
+      history.replaceState(null, '', hash);
+    }
+
+    function applyRoute() {
+      const hash = location.hash || '#/map';
+      if (hash === lastAppliedHash && pendingBattleProgress === null) return;
+      lastAppliedHash = hash;
+      hideRouteNotice();
+      const [section, id] = hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
+
+      if (section === 'battles' && id) {
+        const progress = pendingBattleProgress === null ? 0.05 : pendingBattleProgress;
+        pendingBattleProgress = null;
+        if (BATTLE_MAP[id]) return showBattlePage(id, progress);
+        replaceRoute(lastAppliedHash = '#/battles');
+        showView('battle-page');
+        return showRouteNotice('battle', id);
+      }
+      pendingBattleProgress = null;
+      if (section === 'tanks' && id) {
+        if (TANK_MAP[id]) return showTankPage(id);
+        replaceRoute(lastAppliedHash = '#/tanks');
+        showView('tank-page');
+        return showRouteNotice('tank', id);
+      }
+      if (ROUTE_VIEWS[section]) return showView(ROUTE_VIEWS[section]);
+      replaceRoute(lastAppliedHash = '#/map');
+      showView('map');
+    }
+
+    // "Nothing matches" notice for links to a battle or tank that doesn't exist
+    const ROUTE_SUGGESTIONS = [
+      { label: 'Tiger I', hash: '#/tanks/tiger_i' },
+      { label: 'Kursk 1943', hash: '#/battles/kursk_1943' },
+      { label: 'T-34-85', hash: '#/tanks/t34_85' }
+    ];
+
+    function showRouteNotice(kind, id) {
+      const el = document.getElementById('route-notice');
+      const safeId = String(id).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      el.innerHTML = `
+        <p class="font-semibold text-[var(--foreground)]">No ${kind} matches "${safeId}"</p>
+        <p class="text-sm text-[var(--muted-foreground)]">The link may be mistyped or out of date. Try one of these:</p>
+        <div class="flex flex-wrap gap-2 mt-1">
+          ${ROUTE_SUGGESTIONS.map(s => `<a href="${s.hash}" class="cf-btn inline-flex items-center">${s.label}</a>`).join('')}
+          <button onclick="hideRouteNotice()" class="cf-btn">Dismiss</button>
+        </div>`;
+      el.classList.remove('hidden');
+    }
+
+    function hideRouteNotice() {
+      const el = document.getElementById('route-notice');
+      if (el) el.classList.add('hidden');
+    }
+
+    window.addEventListener('hashchange', applyRoute);
 
     function selectTank(tankId, switchViewToGraph = false) {
       if (!TANK_MAP[tankId]) return;
