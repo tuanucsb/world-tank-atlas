@@ -117,6 +117,16 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
     }
     .cf-btn:hover { color: var(--foreground); }
     .cf-btn[aria-pressed="true"] { color: var(--foreground); border-color: var(--accent); background: rgb(var(--acc-400) / 0.18); font-weight: 600; }
+    /* Battle theater: battlefield fills the screen under the app bar, battle header and force bar */
+    .sim-stage { height: calc(100vh - 260px); min-height: 420px; }
+    .sim-panel { height: calc(100vh - 260px + 56px); min-height: 476px; }
+    .sim-notch {
+      position: absolute; top: 0; transform: translateX(-1px); height: 18px; min-width: 18px; padding: 0 4px;
+      font-size: 12px; line-height: 18px; border-left: 2px solid var(--border); color: var(--muted-foreground);
+    }
+    .sim-notch:hover { color: var(--foreground); }
+    .sim-notch[aria-current="step"] { color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
+    @media (max-width: 1023px) { .sim-panel { height: auto; min-height: 0; } }
     @media (pointer: coarse) {
       .cf-btn, #nation-select { min-height: 44px; }
       .app-tab { min-width: 44px; }
@@ -326,21 +336,24 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
     <!-- VIEW 2: DEDICATED BATTLE PAGE, 5-PHASE TIMELINE & DESTRUCTION SIM     -->
     <!-- ===================================================================== -->
     <section id="view-battle-page" class="hidden flex-col gap-4">
-      <!-- Battle Selector & Quick Presets -->
-      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3.5 shadow-md flex flex-wrap items-center justify-between gap-3">
-        <div class="flex flex-wrap items-center gap-2">
-          <span class="px-2.5 py-1 rounded-lg bg-rose-500/20 text-rose-300 border border-rose-500/40 text-xs font-extrabold">🎬 BATTLE TIMELINE &amp; DESTRUCTION SIMULATOR</span>
-          <select id="battle-page-select" onchange="openBattlePage(this.value)" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] min-w-[330px]"></select>
-          <button onclick="stepBattlePage(-1)" class="px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] hover:border-amber-500 text-xs font-bold">◀ Prev Battle</button>
-          <button onclick="stepBattlePage(1)" class="px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] hover:border-amber-500 text-xs font-bold">Next Battle ▶</button>
-        </div>
-        <div class="flex flex-wrap items-center gap-1.5">
-          <span class="text-xs text-amber-300 font-bold">Major Tank Clashes:</span>
-          <button onclick="openBattlePage('raseiniai_1941')" class="px-2.5 py-1 rounded text-xs font-extrabold bg-amber-500 text-slate-950 hover:bg-amber-400">🔥 1941: Raseiniai (994 Tanks)</button>
-          <button onclick="openBattlePage('kursk_1943')" class="px-2.5 py-1 rounded text-xs font-bold bg-rose-500/20 text-rose-200 border border-rose-500/50 hover:bg-rose-500/30">1943: Kursk (1,460 Tanks)</button>
-          <button onclick="openBattlePage('an_loc_dong_ha_1972')" class="px-2.5 py-1 rounded text-xs font-bold bg-cyan-500/20 text-cyan-200 border border-cyan-500/50 hover:bg-cyan-500/30">🇻🇳 1972: Dong Ha &amp; An Loc</button>
-          <button onclick="openBattlePage('valley_of_tears_1973')" class="px-2.5 py-1 rounded text-xs font-bold bg-amber-500/20 text-amber-200 border border-amber-500/50 hover:bg-amber-500/30">1973: Valley of Tears</button>
-          <button onclick="openBattlePage('easting_1991')" class="px-2.5 py-1 rounded text-xs font-bold bg-orange-500/20 text-orange-200 border border-orange-500/50 hover:bg-orange-500/30">1991: 73 Easting</button>
+      <!-- Battle header (48px): back to the map, title, battle switcher, jump to details -->
+      <div class="h-12 flex items-center gap-3 min-w-0">
+        <button onclick="switchMainView('map')" class="shrink-0 h-10 px-2 rounded-md text-sm font-semibold text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card)] flex items-center gap-1">
+          <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
+          All battles
+        </button>
+        <h2 id="battle-header-title" class="font-display text-[22px] leading-none tracking-wide text-[var(--foreground)] truncate"></h2>
+        <div class="ml-auto shrink-0 flex items-center gap-1">
+          <button onclick="stepBattlePage(-1)" aria-label="Previous battle" class="w-10 h-10 rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card)]">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mx-auto"><path d="M15 18l-6-6 6-6"/></svg>
+          </button>
+          <select id="battle-page-select" onchange="openBattlePage(this.value)" aria-label="Choose a battle" class="h-9 max-w-[240px] px-2 rounded-md text-sm bg-[var(--card)] border border-[var(--border)] text-[var(--foreground)]"></select>
+          <button onclick="stepBattlePage(1)" aria-label="Next battle" class="w-10 h-10 rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card)]">
+            <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mx-auto"><path d="M9 6l6 6-6 6"/></svg>
+          </button>
+          <button onclick="document.getElementById('battle-details').scrollIntoView({ behavior: 'smooth' })" class="ml-2 h-9 px-3 rounded-md text-sm font-semibold border border-[var(--border)] text-[var(--foreground)] hover:border-amber-400">
+            Details
+          </button>
         </div>
       </div>
 

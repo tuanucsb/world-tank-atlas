@@ -349,7 +349,7 @@ finding above. Effort assumes features ~30x, architecture ~5x human:CC.
   - Surfaced by: Pass 1 (D4).
   - Files: `tank_atlas_src/build_v2_part1.py`, `build_v2_part2a.py`.
   - Verify: fresh load shows no popup and no selection; one panel opens on click.
-- [ ] **T5 (P1, human: ~2 days / CC: ~1h): simulator: theater layout and docked control bar.**
+- [x] **T5 (P1, human: ~2 days / CC: ~1h): simulator: theater layout and docked control bar.**
   - Surfaced by: Pass 1 (D5).
   - Files: `tank_atlas_src/build_v2_part2b.py`.
   - Verify: at 1440x900 the battlefield and control bar are fully visible without scrolling below the app bar.
