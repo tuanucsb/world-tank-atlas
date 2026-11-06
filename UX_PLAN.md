@@ -345,7 +345,7 @@ finding above. Effort assumes features ~30x, architecture ~5x human:CC.
   - Surfaced by: Pass 3 (D9).
   - Files: `tank_atlas_src/build_v2_part2a.py`.
   - Verify: open battle → tank → Back → Back returns to battle, then the map; pasting `#/battles/raseiniai-1941` in a new tab opens it.
-- [ ] **T4 (P1, human: ~3h / CC: ~10min): map: clean first load, single side panel, Watch battle.**
+- [x] **T4 (P1, human: ~3h / CC: ~10min): map: clean first load, single side panel, Watch battle.**
   - Surfaced by: Pass 1 (D4).
   - Files: `tank_atlas_src/build_v2_part1.py`, `build_v2_part2a.py`.
   - Verify: fresh load shows no popup and no selection; one panel opens on click.

@@ -221,6 +221,16 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
           <option value="IL">🇮🇱 Israel</option>
           <option value="ASIA_OTHER">Japan / China / S. Korea / Sweden</option>
         </select>
+        <select id="theatre-select" onchange="flyToTheatre(this.value)" aria-label="Theatre"
+          class="ml-2 h-8 px-2 rounded-md text-xs font-semibold bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)]">
+          <option value="WORLD">Whole world</option>
+          <option value="EUROPE_EAST">Eastern Front</option>
+          <option value="EUROPE_WEST">Western Europe</option>
+          <option value="NORTH_AFRICA_SINAI">North Africa, Sinai &amp; Golan</option>
+          <option value="GULF_ME">Persian Gulf &amp; Iraq</option>
+          <option value="VIETNAM_SEA">Vietnam &amp; SE Asia</option>
+          <option value="ASIA">East &amp; South Asia</option>
+        </select>
         <span id="atlas-summary" class="ml-auto pl-4 text-xs text-[var(--muted-foreground)] tabular-nums">__N_TANKS__ tanks and __N_BATTLES__ battles, 1916–2026</span>
       </div>
     </div>
@@ -235,46 +245,32 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
     <!-- VIEW 1 (DEFAULT): WORLD TANK BATTLES & 85 TANKS MAP + POPUPS          -->
     <!-- ===================================================================== -->
     <section id="view-map" class="flex flex-col gap-3">
-      <!-- Theatre Quick-Zoom Bar + Pin Mode Toggle -->
-      <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3 shadow-md flex flex-wrap items-center justify-between gap-2">
-        <div class="flex flex-wrap items-center gap-1.5">
-          <span class="text-xs font-extrabold text-amber-400 mr-1">🌍 COLOR-CODED AREAS:</span>
-          <button onclick="flyToTheatre('WORLD')" class="px-2.5 py-1 rounded-md text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-400 transition">🌐 Full World</button>
-          <button onclick="flyToTheatre('EUROPE_EAST')" class="px-2.5 py-1 rounded-md text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/50 hover:bg-rose-500/30 transition">🟥 E. Front, Raseiniai &amp; Kursk (5)</button>
-          <button onclick="flyToTheatre('EUROPE_WEST')" class="px-2.5 py-1 rounded-md text-xs font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/50 hover:bg-emerald-500/30 transition">🟩 W. Europe &amp; Ardennes (7)</button>
-          <button onclick="flyToTheatre('NORTH_AFRICA_SINAI')" class="px-2.5 py-1 rounded-md text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/50 hover:bg-amber-500/30 transition">🟨 N. Africa, Sinai &amp; Golan (5)</button>
-          <button onclick="flyToTheatre('GULF_ME')" class="px-2.5 py-1 rounded-md text-xs font-bold bg-orange-500/20 text-orange-300 border border-orange-500/50 hover:bg-orange-500/30 transition">🟧 Persian Gulf &amp; Iraq (3)</button>
-          <button onclick="flyToTheatre('VIETNAM_SEA')" class="px-2.5 py-1 rounded-md text-xs font-bold bg-cyan-500/25 text-cyan-200 border border-cyan-400/60 hover:bg-cyan-500/35 transition">🇻🇳 Vietnam &amp; SE Asia (3)</button>
-          <button onclick="flyToTheatre('ASIA')" class="px-2.5 py-1 rounded-md text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/50 hover:bg-purple-500/30 transition">🟪 East &amp; South Asia (4)</button>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-1.5">
-          <span class="text-xs font-bold text-[var(--muted-foreground)]">Map Pins:</span>
-          <button id="mpm-both" onclick="setMapPinMode('both')" class="px-2.5 py-1 rounded text-xs font-extrabold bg-amber-500 text-slate-950">⚔️ 27 Battles + 🛡️ 85 Tanks</button>
-          <button id="mpm-battles" onclick="setMapPinMode('battles')" class="px-2.5 py-1 rounded text-xs font-semibold bg-[var(--background)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]">⚔️ Battles Only</button>
-          <button id="mpm-tanks" onclick="setMapPinMode('tanks')" class="px-2.5 py-1 rounded text-xs font-semibold bg-[var(--background)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]">🛡️ 85 Tanks Only</button>
-          <button onclick="zoomMapBy(1.4)" class="px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] hover:border-amber-500 text-xs font-bold">🔍+</button>
-          <button onclick="zoomMapBy(0.7)" class="px-2 py-1 rounded border border-[var(--border)] bg-[var(--background)] hover:border-amber-500 text-xs font-bold">−</button>
-          <button onclick="openBattlePage(state.selectedBattleId)" class="px-3 py-1 rounded-md bg-rose-600 hover:bg-rose-500 text-white text-xs font-extrabold shadow-sm transition">
-            🎬 Launch Live Battle Timeline &amp; Destruction Sim →
-          </button>
+      <!-- Map toolbar: what to show + zoom. Theatre jumps live in the filter row. -->
+      <div class="bg-[var(--card)] border border-[var(--border)] rounded-[10px] px-3 py-2 flex flex-wrap items-center gap-2">
+        <span class="text-xs font-semibold text-[var(--muted-foreground)]">Show</span>
+        <button id="mpm-both" onclick="setMapPinMode('both')" class="px-2.5 py-1 rounded text-xs font-extrabold bg-amber-500 text-slate-950">Battles and tanks</button>
+        <button id="mpm-battles" onclick="setMapPinMode('battles')" class="px-2.5 py-1 rounded text-xs font-semibold bg-[var(--background)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]">Battles</button>
+        <button id="mpm-tanks" onclick="setMapPinMode('tanks')" class="px-2.5 py-1 rounded text-xs font-semibold bg-[var(--background)] border border-[var(--border)] text-[var(--muted-foreground)] hover:text-[var(--foreground)]">Tanks</button>
+        <div class="ml-auto flex items-center gap-1">
+          <button onclick="zoomMapBy(1.4)" aria-label="Zoom in" class="w-9 h-9 rounded-md border border-[var(--border)] bg-[var(--background)] hover:border-amber-400 text-base font-semibold">+</button>
+          <button onclick="zoomMapBy(0.7)" aria-label="Zoom out" class="w-9 h-9 rounded-md border border-[var(--border)] bg-[var(--background)] hover:border-amber-400 text-base font-semibold">−</button>
         </div>
       </div>
 
-      <!-- Map Canvas (7 cols) + Right-Hand Battle Timeline & Destruction Forensics Inspector (5 cols) -->
+      <!-- Map (full width until a battle is clicked) + side panel for the selected battle -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-start">
-        <div class="lg:col-span-7 bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden shadow-md flex flex-col">
+        <div id="map-col" class="lg:col-span-12 bg-[var(--card)] border border-[var(--border)] rounded-xl overflow-hidden shadow-md flex flex-col">
           <div class="px-4 py-2 border-b border-[var(--border)] flex flex-wrap items-center justify-between gap-2 bg-[var(--background)]/60 text-xs">
-            <span class="font-bold text-[var(--foreground)]" id="map-zoom-readout">World Map • Click any ⚔️ Battle Dot or 🛡️ Tank Pin to open its Popup!</span>
-            <span class="text-amber-300 font-semibold">Click any Tank Card or 🛡️ Pin for Tank Popup with Real Photo • Scroll to zoom</span>
+            <span class="font-semibold text-[var(--foreground)]" id="map-zoom-readout">World map</span>
+            <span class="text-[var(--muted-foreground)]">Scroll to zoom, drag to move</span>
           </div>
 
           <div class="relative w-full h-[690px] bg-[#06101e]" id="map-canvas-wrap">
             <canvas id="world-map-canvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
 
-            <!-- ON-MAP INTERACTIVE BATTLE DOT POPUP CARD (Opens when clicking any battle dot on the map) -->
-            <div id="map-battle-popup" class=" absolute top-3 left-3 z-30 w-[420px] max-w-[95%] max-h-[590px] overflow-y-auto custom-scroll bg-slate-900/95 backdrop-blur-md border-2 border-amber-400 rounded-xl shadow-2xl p-4 text-slate-100 flex flex-col gap-2.5">
-              <!-- Populated dynamically by renderMapPopup() -->
+            <!-- First-visit hint; hidden once a battle is selected -->
+            <div id="map-hint" class="absolute top-3 left-3 z-20 px-3 py-1.5 rounded-md bg-[var(--card)]/95 border border-[var(--border)] text-sm text-[var(--foreground)] pointer-events-none">
+              Click a battle to explore
             </div>
 
             <!-- Interactive Tactical Battlefield Zoom-In Overlay -->
@@ -306,17 +302,23 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
           <!-- Visual Strip of Participating & World Tanks Below the Map (Click any tank for instant Tank Popup!) -->
           <div class="p-3 bg-[var(--background)] border-t border-[var(--border)] flex flex-col gap-2">
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <span class="text-xs font-extrabold text-amber-400" id="map-tank-strip-title">🛡️ ALL 85 TANKS IN ATLAS (Click Any Tank Card to Open Its Popup with Real Photo, Specs &amp; Battles):</span>
-              <button onclick="switchMainView('tank-page')" class="text-xs font-bold text-sky-400 hover:underline">Open Full 85-Tank Visual Gallery →</button>
+              <span class="text-xs font-semibold text-[var(--foreground)]" id="map-tank-strip-title">All __N_TANKS__ tanks</span>
+              <button onclick="switchMainView('tank-page')" class="text-xs font-semibold text-amber-400 hover:underline">Open the tank gallery</button>
             </div>
             <div id="map-tank-photo-strip" class="flex items-center gap-2.5 overflow-x-auto custom-scroll pb-1"></div>
           </div>
         </div>
 
-        <!-- Right-Side Battle Inspector: Participating Multi-Tank Photo Roster + How Tanks Got Destroyed + 5-Phase Timeline (5 cols) -->
-        <div class="lg:col-span-5 bg-[var(--card)] border border-[var(--border)] rounded-xl shadow-md flex flex-col h-[820px]">
+        <!-- Side panel for the battle clicked on the map -->
+        <aside id="map-panel" aria-label="Selected battle" class="hidden lg:col-span-5 bg-[var(--card)] border border-[var(--border)] rounded-[10px] flex flex-col h-[820px]">
+          <div class="flex items-center gap-2 px-5 py-3 border-b border-[var(--border)]">
+            <button onclick="watchSelectedBattle()" class="h-10 px-4 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-semibold">Watch battle</button>
+            <button onclick="closeMapBattle()" aria-label="Close battle panel" class="ml-auto w-10 h-10 rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--background)]">
+              <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mx-auto"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+          </div>
           <div id="battle-inspector" class="flex-1 overflow-y-auto custom-scroll p-5 flex flex-col gap-4"></div>
-        </div>
+        </aside>
       </div>
     </section>
 

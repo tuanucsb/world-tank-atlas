@@ -2289,7 +2289,6 @@ JS_PART_2B = r"""
       renderTankInspector();
       renderMapBattleStrip();
       renderMapTankPhotoStrip();
-      renderMapPopup();
       renderBattleInspector();
       renderAll85TanksPhotoGrid();
       renderTankPage();

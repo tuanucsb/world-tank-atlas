@@ -99,7 +99,7 @@ JS_PART_2A = r"""
       hoveredBattleId: null,
       hoveredMapTankId: null,
       mapPinMode: 'both', // 'both' | 'battles' | 'tanks'
-      mapPopupOpen: true,
+      mapBattleId: null, // battle selected on the map (null on first load)
       tacticalZoomOpen: false,
       layers: { lineage: true, similarity: true, combat: true },
       conflictFilter: 'all',
@@ -475,6 +475,7 @@ JS_PART_2A = r"""
       });
       document.getElementById('filter-row').classList.toggle('hidden', !FILTERED_VIEWS.includes(view));
       document.getElementById('atlas-summary').classList.toggle('hidden', view !== 'map');
+      document.getElementById('theatre-select').classList.toggle('hidden', view !== 'map');
       if (view === 'tank-page') {
         if (typeof renderAll85TanksPhotoGrid === 'function') renderAll85TanksPhotoGrid();
         renderTankPage();
@@ -1143,6 +1144,13 @@ JS_PART_2A = r"""
     let mapBattleScreenPins = [];
     let mapTankScreenPins = [];
 
+    // The 4 largest battles (by tanks involved) keep their label at any zoom
+    // total_tanks is text like "~1,460 Tanks at Prokhorovka (...)": the first number is the total
+    const firstNumber = (text) => parseInt((String(text).match(/\d[\d,]*/) || ['0'])[0].replace(/,/g, ''), 10);
+    const LARGEST_BATTLE_IDS = new Set(
+      [...BATTLES].sort((a, b) => firstNumber(b.total_tanks) - firstNumber(a.total_tanks)).slice(0, 4).map(b => b.id)
+    );
+
     const THEATRE_PRESETS = {
       WORLD:              { lon: 23.12, lat: 55.38, k: 2.35 },
       EUROPE_WEST:        { lon: 3.5,  lat: 49.8, k: 8.5  },
@@ -1177,165 +1185,43 @@ JS_PART_2A = r"""
       const b = BATTLE_MAP[battleId];
       if (!b) return;
       switchMainView('map');
-      selectBattle(battleId, true, true);
+      selectBattle(battleId, true);
     }
 
-    function selectBattle(battleId, zoomTo = false, openPopup = true) {
+    function selectBattle(battleId, zoomTo = false) {
       const b = BATTLE_MAP[battleId];
       if (!b) return;
       state.selectedBattleId = battleId;
-      state.mapPopupOpen = openPopup;
+      state.mapBattleId = battleId;
       if (zoomTo) {
         state.mCam.targetLon = b.lon;
         state.mCam.targetLat = b.lat;
         state.mCam.targetK = Math.max(state.mCam.targetK, 5.8);
       }
       renderMapBattleStrip();
-      renderMapPopup();
       renderBattleInspector();
+      setMapPanelOpen(true);
       if (state.tacticalZoomOpen) {
         drawTacticalSchematic();
       }
     }
 
-    function closeMapPopup() {
-      state.mapPopupOpen = false;
-      const pop = document.getElementById('map-battle-popup');
-      if (pop) {
-        pop.classList.add('hidden');
-        pop.classList.remove('flex');
-      }
+    // Map side panel: hidden until a battle is clicked; map spans the full width meanwhile
+    function setMapPanelOpen(open) {
+      document.getElementById('map-panel').classList.toggle('hidden', !open);
+      document.getElementById('map-col').classList.toggle('lg:col-span-7', open);
+      document.getElementById('map-col').classList.toggle('lg:col-span-12', !open);
+      document.getElementById('map-hint').classList.toggle('hidden', open);
     }
 
-    function renderMapPopup() {
-      const pop = document.getElementById('map-battle-popup');
-      if (!pop) return;
-      if (!state.mapPopupOpen) {
-        pop.classList.add('hidden');
-        pop.classList.remove('flex');
-        return;
-      }
-      const b = BATTLE_MAP[state.selectedBattleId] || BATTLES[0];
-      pop.classList.remove('hidden');
-      pop.classList.add('flex');
+    function closeMapBattle() {
+      state.mapBattleId = null;
+      setMapPanelOpen(false);
+      renderMapBattleStrip();
+    }
 
-      const tankPhotoCards = (tids, borderCls) => tids.map(tid => {
-        const t = TANK_MAP[tid];
-        if (!t) return '';
-        return `<div onclick="openTankPopup('${t.id}')" class="flex items-center gap-2 p-1.5 rounded-lg bg-slate-900/95 hover:bg-slate-800 border ${borderCls} cursor-pointer transition group" title="Click to open interactive Tank Popup for ${t.name}">
-          <img src="${t.photo_url}" alt="${t.name}" class="w-11 h-8 object-cover rounded border border-slate-700 shrink-0" loading="lazy" />
-          <div class="min-w-0 flex-1">
-            <div class="text-xs font-extrabold text-white group-hover:text-amber-300 truncate">${NATION_MAP[t.nation]?.flag || ''} ${t.name}</div>
-            <div class="text-xs text-slate-400 truncate">${t.gun} • ${t.armor_mm}mm</div>
-          </div>
-          <span class="text-xs font-extrabold text-amber-400 shrink-0">🔍</span>
-        </div>`;
-      }).join('');
-
-      const destA = (b.destruction_a || []).slice(0, 3).map(d => `
-        <div class="text-xs flex items-center justify-between gap-1 text-slate-200">
-          <span class="truncate">• ${d.cause}</span>
-          <span class="font-mono font-bold text-rose-300 shrink-0">${d.Share || d.count} (${d.pct}%)</span>
-        </div>
-      `).join('');
-
-      pop.innerHTML = `
-        <div class="flex items-start justify-between gap-2 border-b border-slate-700 pb-2">
-          <div>
-            <span class="px-2 py-0.5 rounded text-xs font-extrabold bg-amber-500 text-slate-950">${b.date} • ${b.theatre}</span>
-            <h3 class="text-base font-extrabold text-white mt-1">${b.name}</h3>
-            <p class="text-xs text-slate-300">📍 ${b.location}</p>
-          </div>
-          <button onclick="closeMapPopup()" class="px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 font-bold">✕</button>
-        </div>
-
-        <!-- Winner & Loser Callout Box -->
-        <div class="grid grid-cols-1 gap-1 bg-slate-950/90 p-2 rounded-lg border border-slate-700 text-xs">
-          <div class="flex items-start gap-1.5">
-            <span class="px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-extrabold text-xs shrink-0">🏆 WINNER</span>
-            <span class="font-bold text-emerald-300">${b.winner}</span>
-          </div>
-          <div class="flex items-start gap-1.5">
-            <span class="px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 font-extrabold text-xs shrink-0">💥 DEFEATED</span>
-            <span class="font-semibold text-rose-300">${b.loser}</span>
-          </div>
-        </div>
-
-        <!-- How Many Involved & Losses -->
-        <div class="bg-amber-500/15 border border-amber-500/40 rounded-lg p-2 text-xs">
-          <div class="font-extrabold text-amber-300">📊 How Many Tanks Involved: ${b.total_tanks}</div>
-          <div class="grid grid-cols-2 gap-2 mt-1.5 pt-1.5 border-t border-amber-500/25 text-xs">
-            <div>
-              <div class="font-bold text-sky-300">🟦 ${b.side_a.flag || ''} ${b.side_a.name}</div>
-              <div class="text-slate-200">Strength: <strong>${b.side_a.count}</strong></div>
-              <div class="text-rose-300">Lost: ${b.losses_a}</div>
-            </div>
-            <div>
-              <div class="font-bold text-rose-300">🟥 ${b.side_b.flag || ''} ${b.side_b.name}</div>
-              <div class="text-slate-200">Strength: <strong>${b.side_b.count}</strong></div>
-              <div class="text-rose-300">Lost: ${b.losses_b}</div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Multiple Participating Tanks with Real Photos (Click Any Tank for Popup!) -->
-        <div class="flex flex-col gap-1.5">
-          <div class="text-xs font-extrabold text-amber-300 uppercase">🛡️ Participating Tanks (${b.side_a.tanks.length + b.side_b.tanks.length} Models — Click Any Tank for Popup):</div>
-          <div class="grid grid-cols-2 gap-1.5">
-            <div class="flex flex-col gap-1">
-              <div class="text-xs font-bold text-sky-300 uppercase">🟦 Side A Tanks (${b.side_a.tanks.length})</div>
-              ${tankPhotoCards(b.side_a.tanks, 'border-sky-400/50')}
-            </div>
-            <div class="flex flex-col gap-1">
-              <div class="text-xs font-bold text-rose-300 uppercase">🟥 Side B Tanks (${b.side_b.tanks.length})</div>
-              ${tankPhotoCards(b.side_b.tanks, 'border-rose-400/50')}
-            </div>
-          </div>
-        </div>
-
-        <!-- Real Historical Operational Battle Map Preview -->
-        ${b.real_map_url ? `
-        <div class="bg-slate-950/90 border border-amber-500/40 rounded-lg p-2 flex flex-col gap-1.5">
-          <div class="flex items-center justify-between">
-            <span class="text-xs font-extrabold text-amber-300 uppercase">🗺️ Real Historical Battle Map</span>
-            <button onclick="openBattlePage('${b.id}')" class="text-xs font-bold text-sky-300 hover:underline">Open Full Interactive Map →</button>
-          </div>
-          <img src="${b.real_map_url}" alt="${b.name} Map" onclick="openBattlePage('${b.id}')" class="w-full h-32 object-cover rounded border border-slate-700 cursor-pointer hover:opacity-95 transition" loading="lazy" />
-          <div class="text-xs text-slate-400 leading-snug">${b.real_map_caption || ''}</div>
-        </div>` : ''}
-
-        <!-- Forensic Destruction Breakdown Preview -->
-        ${destA ? `
-        <div class="bg-rose-950/50 border border-rose-500/40 rounded-lg p-2 flex flex-col gap-1">
-          <div class="text-xs font-extrabold text-rose-300 uppercase">💥 How the Tanks Got Destroyed (Primary Causes):</div>
-          ${destA}
-        </div>` : ''}
-
-        <!-- Real Knocked-Out Tank Wreckage Photos Preview -->
-        ${(b.wreckage_photos && b.wreckage_photos.length) ? `
-        <div class="bg-slate-950/90 border border-rose-500/40 rounded-lg p-2 flex flex-col gap-1.5">
-          <div class="text-xs font-extrabold text-rose-300 uppercase">🔥 Real Knocked-Out Tank Wreckage (${b.wreckage_photos.length} Archival Photos):</div>
-          <div class="grid grid-cols-2 gap-1.5">
-            ${b.wreckage_photos.slice(0, 2).map(w => `
-              <div onclick="openBattlePage('${b.id}')" class="bg-slate-900 border border-slate-700 rounded p-1 cursor-pointer hover:border-rose-400 transition">
-                <img src="${w.url}" alt="${w.title}" class="w-full h-16 object-cover rounded" loading="lazy" />
-                <div class="text-xs font-bold text-rose-200 truncate mt-0.5">${w.title}</div>
-              </div>
-            `).join('')}
-          </div>
-        </div>` : ''}
-
-        <p class="text-xs text-slate-200 leading-relaxed">${b.summary}</p>
-
-        <div class="grid grid-cols-2 gap-1.5 pt-1">
-          <button onclick="openBattlePage('${b.id}')" class="px-2.5 py-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-extrabold shadow text-center">
-            🎬 Real Map Sim + Kill-Cam + Footage
-          </button>
-          <button onclick="toggleTacticalZoomModal(true)" class="px-2.5 py-2 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold shadow text-center">
-            🎯 Formation Schematic
-          </button>
-        </div>
-      `;
+    function watchSelectedBattle() {
+      if (state.mapBattleId) openBattlePage(state.mapBattleId);
     }
 
     function toggleTacticalZoomModal(forceState) {
@@ -1418,7 +1304,7 @@ JS_PART_2A = r"""
       canvas.addEventListener('click', () => {
         if (state.mCam.moved) return;
         if (state.hoveredBattleId) {
-          selectBattle(state.hoveredBattleId, true, true);
+          selectBattle(state.hoveredBattleId, true);
         } else if (state.hoveredMapTankId) {
           openTankPopup(state.hoveredMapTankId);
         }
@@ -1449,8 +1335,8 @@ JS_PART_2A = r"""
 
       const readout = document.getElementById('map-zoom-readout');
       if (readout) {
-        const b = BATTLE_MAP[state.selectedBattleId];
-        readout.textContent = `Camera Zoom: ${state.mCam.k.toFixed(1)}x • Selected: ${b ? b.name + ' (' + b.year + ')' : ''}`;
+        const b = BATTLE_MAP[state.mapBattleId];
+        readout.textContent = b ? `${b.name} (${b.year})` : 'World map';
       }
 
       const ctx = canvas.getContext('2d');
@@ -1583,7 +1469,7 @@ JS_PART_2A = r"""
           const s = lonLatToScreen(b.lon, b.lat, W, H);
           if (s.x < -60 || s.x > W + 60 || s.y < -60 || s.y > H + 60) return;
 
-          const isSel = b.id === state.selectedBattleId;
+          const isSel = b.id === state.mapBattleId;
           const isHov = b.id === state.hoveredBattleId;
           const isVietnam = b.id.includes('1968') || b.id.includes('1972') || b.id.includes('1975');
           const r = isSel ? 11 : (isHov ? 9.5 : 7.2);
@@ -1607,7 +1493,7 @@ JS_PART_2A = r"""
           ctx.stroke();
 
           // Label Pill
-          if (state.mCam.k >= 1.9 || isSel || isHov || isVietnam) {
+          if (state.mCam.k >= 5 || isSel || isHov || LARGEST_BATTLE_IDS.has(b.id)) {
             const shortBName = b.name.replace('Battle of ', '').replace('Battles of ', '').slice(0, 22);
             const label = `${b.year} ${shortBName}`;
             ctx.font = (isSel ? 'bold 11.5px' : 'bold 10px') + ' Inter, sans-serif';
@@ -1639,10 +1525,10 @@ JS_PART_2A = r"""
       const strip = document.getElementById('map-battle-strip');
       if (!strip) return;
       strip.innerHTML = BATTLES.map(b => {
-        const active = b.id === state.selectedBattleId;
+        const active = b.id === state.mapBattleId;
         const isVN = b.id.includes('1968') || b.id.includes('1972') || b.id.includes('1975');
         return `
-          <button onclick="selectBattle('${b.id}', true, true)" class="shrink-0 px-2.5 py-1.5 rounded-md border text-left transition ${
+          <button onclick="selectBattle('${b.id}', true)" class="shrink-0 px-2.5 py-1.5 rounded-md border text-left transition ${
             active
               ? 'bg-amber-500 text-slate-950 border-amber-300 font-extrabold shadow'
               : (isVN ? 'bg-cyan-950/90 border-cyan-500/60 text-cyan-200 hover:border-cyan-300' : 'bg-slate-900 border-slate-700 text-slate-300 hover:text-white')
