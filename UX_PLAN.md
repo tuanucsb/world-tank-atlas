@@ -361,7 +361,7 @@ finding above. Effort assumes features ~30x, architecture ~5x human:CC.
   - Surfaced by: Pass 3 (D10).
   - Files: `tank_atlas_src/build_v2_part2b.py`, `build_v2_part2a.py`.
   - Verify: clicking a unit pauses, shows the ring and the card; Esc resumes.
-- [ ] **T8 (P1, human: ~4h / CC: ~20min): simulator: counters, on-demand labels, ≤3 fading callouts.**
+- [x] **T8 (P1, human: ~4h / CC: ~20min): simulator: counters, on-demand labels, ≤3 fading callouts.**
   - Surfaced by: Pass 4 (D13).
   - Files: `tank_atlas_src/build_v2_part2b.py`.
   - Verify: screenshot of the Raseiniai crossroads mid-Phase 2 has no overlapping text.

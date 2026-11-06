@@ -1191,20 +1191,6 @@ JS_PART_2B = r"""
             ctx.stroke();
             ctx.restore();
 
-            // Forensic Kill Pop-Up Banner right above exploding tank
-            ctx.fillStyle = 'rgba(136, 19, 55, 0.92)';
-            ctx.strokeStyle = '#fde047';
-            ctx.lineWidth = 1;
-            const kTxt = `💥 ${agent.label}: ${agent.killCause.slice(0, 28)}`;
-            ctx.font = 'bold 9px Inter, sans-serif';
-            const kw = ctx.measureText(kTxt).width + 10;
-            ctx.beginPath();
-            ctx.roundRect(-kw / 2, -34 - ep * 12, kw, 15, 3);
-            ctx.fill();
-            ctx.stroke();
-            ctx.fillStyle = '#fef08a';
-            ctx.textAlign = 'center';
-            ctx.fillText(kTxt, 0, -23.5 - ep * 12);
           }
 
           // Continuous Burning Wreckage Flames & Billowing Black Oil Smoke Plume
@@ -1236,16 +1222,7 @@ JS_PART_2B = r"""
           ctx.roundRect(-14, -7, 28, 14, 3);
           ctx.fill();
           ctx.stroke();
-          ctx.fillStyle = '#67e8f9';
-          ctx.font = 'bold 8px monospace';
-          ctx.textAlign = 'center';
-          ctx.fillText('⛽NO FUEL', 0, 3);
         }
-      } else if (isRicochet) {
-        ctx.fillStyle = '#fde047';
-        ctx.font = 'bold 9.5px monospace';
-        ctx.textAlign = 'center';
-        ctx.fillText('⚡RICOCHET!', 0, -ph / 2 - 4);
       }
 
       ctx.restore();
@@ -1268,6 +1245,51 @@ JS_PART_2B = r"""
         const hit = hitTestSimAgent(canvas, e, touch ? 22 : 15);
         if (hit && hit.tankId) selectSimUnit(hit.id);
       });
+    }
+
+    function stripEmoji(text) {
+      return String(text || '').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, '').replace(/\s+/g, ' ').trim();
+    }
+
+    // Knock-outs are announced once, when progress first passes killAt (reset on replay or rewind)
+    const killCallouts = { seen: new Map(), lastP: 0, battleId: null };
+    function drawKillCallouts(ctx, W, p) {
+      const now = performance.now();
+      if (killCallouts.battleId !== state.selectedBattleId || p < killCallouts.lastP - 0.01) {
+        killCallouts.seen.clear();
+        killCallouts.battleId = state.selectedBattleId;
+        // units already knocked out at the starting point are not news
+        simScreenAgents.forEach(a => { if (a.isWreck) killCallouts.seen.set(a.id, -Infinity); });
+      }
+      killCallouts.lastP = p;
+      simScreenAgents.forEach(a => {
+        if (a.isWreck && !killCallouts.seen.has(a.id)) killCallouts.seen.set(a.id, now);
+      });
+      const live = simScreenAgents
+        .filter(a => a.isWreck && now - killCallouts.seen.get(a.id) < 2000)
+        .sort((a, b) => killCallouts.seen.get(b.id) - killCallouts.seen.get(a.id))
+        .slice(0, 3);
+      ctx.save();
+      ctx.font = '600 13px "IBM Plex Sans", sans-serif';
+      ctx.textAlign = 'left';
+      live.forEach((a, i) => {
+        const age = now - killCallouts.seen.get(a.id);
+        const cause = stripEmoji(a.killCause).replace(/\s*\(.*\)\s*$/, '');
+        const text = `${stripEmoji(a.label)} knocked out${cause ? ': ' + cause : ''}`.slice(0, 60);
+        const tw = ctx.measureText(text).width;
+        const x = 12, y = 12 + i * 30;
+        ctx.globalAlpha = age > 1500 ? (2000 - age) / 500 : 1;
+        ctx.fillStyle = 'rgba(17, 22, 17, 0.9)';
+        ctx.beginPath();
+        ctx.roundRect(x, y, tw + 20, 24, 6);
+        ctx.fill();
+        ctx.fillStyle = a.side === 'A' ? '#4f8fe8' : '#e5534b';
+        ctx.fillRect(x, y + 4, 3, 16);
+        ctx.fillStyle = '#ecefe6';
+        ctx.fillText(text, x + 12, y + 16.5);
+      });
+      ctx.restore();
+      killCallouts.live = live.map(a => a.id);
     }
 
     function hitTestSimAgent(canvas, e, radius) {
@@ -1306,7 +1328,7 @@ JS_PART_2B = r"""
       const t = TANK_MAP[agent.tankId];
       if (!card || !t) return;
       const status = agent.isWreck
-        ? `Knocked out at ${Math.round(agent.killAt * 100)}% of the battle${agent.killCause ? ': ' + agent.killCause : ''}`
+        ? `Knocked out at ${Math.round(agent.killAt * 100)}% of the battle${agent.killCause ? ': ' + stripEmoji(agent.killCause) : ''}`
         : 'In action';
       card.innerHTML = `
         <button onclick="clearSimUnit()" class="self-start h-10 px-2 -ml-2 rounded-md text-sm font-semibold text-[var(--muted-foreground)] hover:text-[var(--foreground)] flex items-center gap-1">
@@ -1448,7 +1470,7 @@ JS_PART_2B = r"""
               </div>
               <div class="text-xs font-extrabold text-white">${ph.title}</div>
               <div class="text-xs leading-snug text-slate-300">${ph.desc}</div>
-              <div class="text-xs font-bold text-rose-300 pt-1 border-t border-slate-800/80">💥 ${ph.losses_note}</div>
+              <div class="text-xs font-bold text-rose-300 pt-1 border-t border-slate-800/80">${ph.losses_note}</div>
             </div>
           `).join('');
         }
@@ -1510,7 +1532,7 @@ JS_PART_2B = r"""
         ctx.stroke();
         ctx.fillStyle = '#38bdf8';
         ctx.font = 'bold 10px monospace';
-        ctx.fillText('🌊 DUBYSA RIVER BRIDGEHEADS', W * 0.14, H * 0.10);
+        ctx.fillText('Dubysa River bridgeheads', W * 0.14, H * 0.10);
 
         // Raseiniai Forest & Pocket Zone
         ctx.fillStyle = 'rgba(16, 185, 129, 0.08)';
@@ -1524,7 +1546,7 @@ JS_PART_2B = r"""
         ctx.fillStyle = '#6ee7b7';
         ctx.font = 'bold 10.5px Inter, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('🌲 RASEINIAI TOWN & FOREST POCKET (3rd & 12th Mech Corps)', W * 0.54, H * 0.14);
+        ctx.fillText('Raseiniai town and forest pocket', W * 0.54, H * 0.14);
 
         // Northern Crossroads (Lone KV-1/KV-2 26-Hour Stand)
         ctx.fillStyle = 'rgba(251, 191, 36, 0.16)';
@@ -1536,7 +1558,7 @@ JS_PART_2B = r"""
         ctx.stroke();
         ctx.fillStyle = '#fde68a';
         ctx.font = 'bold 10px Inter, sans-serif';
-        ctx.fillText('⭐ LONE KV CROSSROADS (26h Stand vs 6th Pz.Div)', W * 0.35, H * 0.22 - 32);
+        ctx.fillText('Lone KV crossroads', W * 0.35, H * 0.22 - 32);
 
         // Southern Kelmė Flank Hook Arrow (1st Panzer Division encirclement)
         if (p >= 0.45) {
@@ -1550,7 +1572,7 @@ JS_PART_2B = r"""
           ctx.setLineDash([]);
           ctx.fillStyle = '#fda4af';
           ctx.font = 'bold 10px Inter, sans-serif';
-          ctx.fillText('🟥 1st PANZER DIV FLANK HOOK FROM KELMĖ (Closes Pocket)', W * 0.52, H * 0.91);
+          ctx.fillText('1st Panzer flank hook from Kelmė', W * 0.52, H * 0.91);
         }
         ctx.restore();
       } else {
@@ -1653,15 +1675,12 @@ JS_PART_2B = r"""
           ctx.stroke();
         }
 
-        // Show compact model label on key lead tanks, heavy tanks, Lone KV, or hovered tank
-        if (ag.isLoneKV || isHov || idx % 3 === 0) {
-          ctx.font = (ag.isLoneKV || isHov ? 'bold 10px' : 'bold 8.5px') + ' Inter, sans-serif';
+        // Units are unlabeled counters; only the hovered or selected unit gets its name
+        if (isHov) {
+          ctx.font = '600 12px "IBM Plex Sans", sans-serif';
           ctx.textAlign = 'center';
-          const tag = ag.isWreck
-            ? `💥 ${ag.label}`
-            : ag.label;
-          ctx.fillStyle = ag.isLoneKV ? '#fde047' : (ag.isWreck ? '#fca5a5' : (ag.side === 'A' ? '#bae6fd' : '#fecdd3'));
-          ctx.fillText(tag, ag.x, ag.y + (ag.isLoneKV ? 20 : 15));
+          ctx.fillStyle = ag.isWreck ? '#fca5a5' : '#ffffff';
+          ctx.fillText(stripEmoji(ag.label), ag.x, ag.y + 30);
         }
       });
 
@@ -1678,8 +1697,9 @@ JS_PART_2B = r"""
         const isA = u.side === 'A';
         const color = isA ? '#38bdf8' : '#f43f5e';
 
-        ctx.font = 'bold 10.5px Inter, sans-serif';
-        const tw = ctx.measureText(u.label).width;
+        ctx.font = '600 12px "IBM Plex Sans", sans-serif';
+        const label = u.label.length > 28 ? u.label.slice(0, 27) + '…' : u.label;
+        const tw = ctx.measureText(label).width;
         ctx.fillStyle = 'rgba(2, 6, 23, 0.88)';
         ctx.strokeStyle = color;
         ctx.lineWidth = 1.3;
@@ -1689,33 +1709,18 @@ JS_PART_2B = r"""
         ctx.stroke();
         ctx.fillStyle = '#ffffff';
         ctx.textAlign = 'center';
-        ctx.fillText(u.label, cx, cy - 15.5);
+        ctx.fillText(label, cx, cy - 15.5);
       });
 
-      // Top-Left HUD Overlay on Canvas: Total Force & How Tanks Were Destroyed Summary
-      ctx.fillStyle = 'rgba(2, 6, 23, 0.88)';
-      ctx.strokeStyle = 'rgba(251, 191, 36, 0.5)';
-      ctx.lineWidth = 1.2;
-      ctx.beginPath();
-      ctx.roundRect(10, 10, 320, 62, 8);
-      ctx.fill();
-      ctx.stroke();
-      ctx.textAlign = 'left';
-      ctx.font = 'bold 11px Inter, sans-serif';
-      ctx.fillStyle = '#fbbf24';
-      ctx.fillText(`⚔️ ${b.name.toUpperCase()} (${b.total_tanks})`, 18, 27);
-      ctx.font = '10px monospace';
-      ctx.fillStyle = '#bae6fd';
-      ctx.fillText(`🟦 Active: ${curActiveA} | Lost: ${curLostA} (${b.side_a.tanks.length} models)`, 18, 44);
-      ctx.fillStyle = '#fecdd3';
-      ctx.fillText(`🟥 Active: ${curActiveB} | Lost: ${curLostB} (${b.side_b.tanks.length} models)`, 18, 60);
+      // Kill callouts: one short line per knock-out, fades after 2s, at most 3 on screen
+      drawKillCallouts(ctx, W, p);
 
       // Hovered Tank Agent Tooltip on Battlefield Canvas
-      if (hoveredSimAgent) {
+      if (hoveredSimAgent && hoveredSimAgent.id !== state.sim.selectedAgentId) {
         const t = TANK_MAP[hoveredSimAgent.tankId];
         const statusTxt = hoveredSimAgent.isWreck
-          ? `DESTROYED AT ${Math.round(hoveredSimAgent.killAt * 100)}%: ${hoveredSimAgent.killCause}`
-          : (hoveredSimAgent.isRicochet ? 'ACTIVE — 90mm Armor Deflecting AP Hits!' : `ACTIVE PLATOON (${t ? t.gun : ''})`);
+          ? `Knocked out: ${stripEmoji(hoveredSimAgent.killCause)}`
+          : `In action${t ? ', ' + t.gun : ''}`;
         const tipW = 290;
         const tipH = 52;
         const tx = Math.min(W - tipW - 10, Math.max(10, hoveredSimAgent.x - tipW / 2));
@@ -1729,14 +1734,14 @@ JS_PART_2B = r"""
         ctx.stroke();
 
         ctx.textAlign = 'left';
-        ctx.font = 'bold 11px Inter, sans-serif';
-        ctx.fillStyle = '#fde68a';
-        ctx.fillText(`🛡️ ${t ? t.name : hoveredSimAgent.label} — Click for Tank Popup!`, tx + 8, ty + 18);
-        ctx.font = '10px monospace';
-        ctx.fillStyle = hoveredSimAgent.isWreck ? '#fda4af' : '#6ee7b7';
-        ctx.fillText(statusTxt.slice(0, 44), tx + 8, ty + 34);
-        ctx.fillStyle = '#94a3b8';
-        ctx.fillText(`Armor: ${t ? t.armor_mm + 'mm' : ''} • Weight: ${t ? t.weight_t + 't' : ''}`, tx + 8, ty + 47);
+        ctx.font = '600 13px "IBM Plex Sans", sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(t ? t.name : stripEmoji(hoveredSimAgent.label), tx + 8, ty + 19);
+        ctx.font = '12px "IBM Plex Sans", sans-serif';
+        ctx.fillStyle = hoveredSimAgent.isWreck ? '#fca5a5' : '#c4cbbb';
+        ctx.fillText(statusTxt.slice(0, 46), tx + 8, ty + 35);
+        ctx.fillStyle = '#a9b2a0';
+        ctx.fillText('Click for details', tx + 8, ty + 48);
       }
 
       ctx.restore();

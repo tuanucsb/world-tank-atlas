@@ -450,7 +450,7 @@ def enrich_all_battles_with_forensics(battles):
                 la = int(round(f["numeric_lost_a"] * ph_copy.get("lost_a_pct", (idx + 1) / n_ph)))
                 lb = int(round(f["numeric_lost_b"] * ph_copy.get("lost_b_pct", (idx + 1) / n_ph)))
                 fe = ph_copy.get("focus_event", "Armored engagement")
-                ph_copy["losses_note"] = f"{fe} • Destroyed so far: 🟦 {la} vs 🟥 {lb}"
+                ph_copy["losses_note"] = f"{fe} · Losses so far: {la} vs {lb}"
             norm_phases.append(ph_copy)
         b["phases"] = norm_phases
 
