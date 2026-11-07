@@ -618,8 +618,8 @@ JS_PART_2B = r"""
                 <canvas id="battle-sim-canvas" class="relative z-10 w-full h-full block cursor-pointer"></canvas>
                 <div class="sim-scale-note absolute bottom-2 right-2 z-[15] max-w-[calc(100%-1rem)] px-2.5 py-1 rounded-md bg-[var(--card)]/90 border border-[var(--border)] text-xs text-[var(--muted-foreground)] pointer-events-auto"
                   title="Phases, tank counts and losses come from historical sources. Unit positions and movements on the map are illustrative.">
-                  <span class="text-sky-400 tabular-nums">${countersA} counters for ${b.side_a_num} tanks</span> ·
-                  <span class="text-rose-400 tabular-nums">${countersB} for ${b.side_b_num}</span> ·
+                  <span class="text-sky-400 tabular-nums">${countersA === b.side_a_num ? `${countersA} tanks, one counter each` : `${countersA} counters for ${b.side_a_num} tanks`}</span> ·
+                  <span class="text-rose-400 tabular-nums">${countersB === b.side_b_num ? `${countersB} tanks, one counter each` : `${countersB} for ${b.side_b_num}`}</span> ·
                   positions are illustrative
                 </div>
 
@@ -972,7 +972,8 @@ JS_PART_2B = r"""
       const causesB = (b.destruction_b || []).map(d => d.cause);
 
       // Spawn 40 Side A Tank Platoon Agents across 4 Tactical Echelons
-      const countA = isRaseiniai ? 42 : 34;
+      // Never draw more counters than the side had tanks (small battles: one counter per tank)
+      const countA = Math.max(1, Math.min(isRaseiniai ? 42 : 34, b.side_a_num || Infinity));
       for (let i = 0; i < countA; i++) {
         let tid = tanksA[i % tanksA.length];
         if (isRaseiniai) {
@@ -1038,7 +1039,7 @@ JS_PART_2B = r"""
       }
 
       // Spawn 30 Side B Tank Platoon Agents
-      const countB = isRaseiniai ? 28 : 30;
+      const countB = Math.max(1, Math.min(isRaseiniai ? 28 : 30, b.side_b_num || Infinity));
       for (let j = 0; j < countB; j++) {
         let tid = tanksB[j % tanksB.length];
         if (isRaseiniai) {

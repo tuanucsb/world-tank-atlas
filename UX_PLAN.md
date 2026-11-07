@@ -414,7 +414,8 @@ finding above. Effort assumes features ~30x, architecture ~5x human:CC.
 - [x] **B3 (P2, CC: ~20min): losses strip above the scrubber.** Knock-outs over time per side (blue above, red below), from the same deterministic `buildBattleAgents` the simulator draws. Hidden below 768px.
 - [x] **B4 (P2, CC: ~20min): link to a moment.** `#/battles/<id>?t=0.42` opens the battle at that point (Ready state). A link button in the control bar copies the current moment.
 - [x] **B5 (P2, CC: ~15min): night phases.** Phases whose text describes night fighting get `night: true` in the data (Lang Vei/Ben Het 2 and 4, Chinese Farm 2 and 5, Valley of Tears 2, Balaton 3, Sinai 5); the battlefield darkens and the phase label adds "Night".
-- Later candidates (not scheduled): movement arrows per phase, pause at key moments, link knock-outs to the kill-cam, camera follows the action, see it from one side, end-of-battle quiz; and cap counters at the real tank count for small battles.
+- Later candidates (not scheduled): movement arrows per phase, pause at key moments, link knock-outs to the kill-cam, camera follows the action, see it from one side, end-of-battle quiz.
+- [x] **B6 (P2, CC: ~10min): cap counters at the real tank count.** A side never shows more counters than it had tanks; changes Cambrai (Side B 30 → 7), Villers-Bretonneux (34/30 → 7/13) and Chawinda (Side A 34 → 20). The note reads "7 tanks, one counter each" when they match.
 
 Task notes from the eng review:
 - **T3:** routes use data ids verbatim (`#/battles/raseiniai_1941`, E4). The hash is the single owner of navigation, with `hashchange` → `applyRoute()`. Unknown ids go to the section index plus the no-results message via `replaceState` (D6).
