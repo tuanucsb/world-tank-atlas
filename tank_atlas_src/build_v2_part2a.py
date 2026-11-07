@@ -167,6 +167,51 @@ JS_PART_2A = r"""
       document.documentElement.classList.toggle('light-theme');
     }
 
+    function toggleViewMenu(open) {
+      const menu = document.getElementById('view-menu');
+      const btn = document.getElementById('view-menu-btn');
+      const show = open === undefined ? menu.classList.contains('hidden') : open;
+      menu.classList.toggle('hidden', !show);
+      btn.setAttribute('aria-expanded', show ? 'true' : 'false');
+    }
+
+    function toggleMobileSearch() {
+      const bar = document.getElementById('app-bar');
+      const open = !bar.classList.contains('search-open');
+      bar.classList.toggle('search-open', open);
+      document.getElementById('mobile-search-btn').setAttribute('aria-expanded', open ? 'true' : 'false');
+      if (open) document.getElementById('search-input').focus();
+    }
+
+    // Bottom sheet (below 1024px): tap the handle to toggle, or drag it and let go to snap
+    (() => {
+      let drag = null;
+      document.addEventListener('pointerdown', (e) => {
+        const handle = e.target.closest('.sheet-handle');
+        if (!handle || !matchMedia('(max-width: 1023px)').matches) return;
+        const sheet = handle.closest('.sheet');
+        drag = { sheet, startY: e.clientY, full: sheet.classList.contains('sheet-full'), moved: 0 };
+        sheet.classList.add('sheet-dragging');
+        handle.setPointerCapture(e.pointerId);
+      });
+      document.addEventListener('pointermove', (e) => {
+        if (!drag) return;
+        drag.moved = e.clientY - drag.startY;
+        const peek = window.innerHeight * 0.6;
+        const base = drag.full ? 0 : peek;
+        drag.sheet.style.transform = `translateY(${Math.min(peek, Math.max(0, base + drag.moved))}px)`;
+      });
+      document.addEventListener('pointerup', () => {
+        if (!drag) return;
+        const { sheet, full, moved } = drag;
+        sheet.classList.remove('sheet-dragging');
+        sheet.style.transform = '';
+        const open = Math.abs(moved) < 8 ? !full : moved < 0;
+        sheet.classList.toggle('sheet-full', open);
+        drag = null;
+      });
+    })();
+
     function toggleSiteMenu(open) {
       const menu = document.getElementById('site-menu');
       const btn = document.getElementById('site-switcher-btn');
@@ -177,9 +222,10 @@ JS_PART_2A = r"""
 
     document.addEventListener('click', (e) => {
       if (!e.target.closest('#site-menu, #site-switcher-btn')) toggleSiteMenu(false);
+      if (!e.target.closest('#view-menu-btn') || e.target.closest('#view-menu')) toggleViewMenu(false);
     });
     document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') toggleSiteMenu(false);
+      if (e.key === 'Escape') { toggleSiteMenu(false); toggleViewMenu(false); }
     });
 
     function setMapPinMode(mode) {
@@ -476,6 +522,10 @@ JS_PART_2A = r"""
         }
       });
       document.getElementById('filter-row').classList.toggle('hidden', !FILTERED_VIEWS.includes(view));
+      document.body.dataset.view = view;
+      document.querySelectorAll('[data-view-link]').forEach(b => {
+        if (b.dataset.viewLink === view) b.setAttribute('aria-current', 'page'); else b.removeAttribute('aria-current');
+      });
       document.getElementById('atlas-summary').classList.toggle('hidden', view !== 'map');
       document.getElementById('theatre-select').classList.toggle('hidden', view !== 'map');
       if (view === 'tank-page') {
@@ -1217,6 +1267,8 @@ JS_PART_2A = r"""
       document.getElementById('map-col').classList.toggle('lg:col-span-7', open);
       document.getElementById('map-col').classList.toggle('lg:col-span-12', !open);
       document.getElementById('map-hint').classList.toggle('hidden', open);
+      document.body.classList.toggle('map-panel-open', open);
+      if (!open) document.getElementById('map-panel').classList.remove('sheet-full');
     }
 
     function closeMapBattle() {

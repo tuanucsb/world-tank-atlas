@@ -561,9 +561,9 @@ JS_PART_2B = r"""
             <div class="flex flex-col gap-2.5">
               ${items.map(d => `
                 <div class="p-3 rounded-xl bg-slate-950 border border-slate-800 flex flex-col gap-1.5">
-                  <div class="flex items-center justify-between gap-2 text-xs">
-                    <span class="font-extrabold text-white">💥 ${d.cause}</span>
-                    <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-extrabold shrink-0">${d.Share || d.count} (${d.pct}%)</span>
+                  <div class="flex flex-wrap items-center justify-between gap-2 text-xs">
+                    <span class="font-extrabold text-white min-w-0">${d.cause}</span>
+                    <span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/40 font-mono font-extrabold max-w-full">${d.Share || d.count} (${d.pct}%)</span>
                   </div>
                   <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
                     <div class="h-full ${barCls} rounded-full" style="width:${Math.min(100, d.pct)}%"></div>
@@ -640,7 +640,7 @@ JS_PART_2B = r"""
               <!-- Docked control bar -->
               <div id="sim-controls" class="flex items-center gap-3 px-3 min-h-14 py-2 bg-[var(--card)] border-t border-[var(--border)]">
                 <button id="sim-play-btn" onclick="toggleSimPlay()" aria-label="Pause" class="shrink-0 w-11 h-11 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center justify-center"></button>
-                <button onclick="restartBattleSim()" aria-label="Replay from the start" title="Replay from the start" class="shrink-0 w-11 h-11 rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--background)] flex items-center justify-center">
+                <button id="sim-replay-btn" onclick="restartBattleSim()" aria-label="Replay from the start" title="Replay from the start" class="shrink-0 w-11 h-11 rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--background)] flex items-center justify-center">
                   <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
                 </button>
                 <span id="sim-time-readout" class="shrink-0 w-44 truncate text-sm tabular-nums text-[var(--foreground)]">${(phases[0] && phases[0].time) || b.date}</span>
@@ -654,7 +654,7 @@ JS_PART_2B = r"""
                   }).join('')}
                   <input id="sim-scrubber" type="range" min="0" max="1" step="0.004" value="${state.sim.progress}" oninput="scrubBattleSim(this.value)" aria-label="Battle timeline" class="w-full accent-amber-400 cursor-pointer" />
                 </div>
-                <div class="shrink-0 flex items-center gap-1" role="group" aria-label="Speed">
+                <div id="sim-speed-group" class="shrink-0 flex items-center gap-1" role="group" aria-label="Speed">
                   <button data-sim-speed="0.5" onclick="setSimSpeed(0.5)" class="cf-btn" aria-pressed="${state.sim.speed === 0.5}">0.5×</button>
                   <button data-sim-speed="1" onclick="setSimSpeed(1)" class="cf-btn" aria-pressed="${state.sim.speed === 1}">1×</button>
                   <button data-sim-speed="2" onclick="setSimSpeed(2)" class="cf-btn" aria-pressed="${state.sim.speed === 2}">2×</button>
@@ -663,7 +663,8 @@ JS_PART_2B = r"""
             </div>
 
             <!-- Story panel: current phase + event feed -->
-            <aside aria-label="Battle story" class="sim-panel lg:col-span-1 bg-[var(--card)] border border-[var(--border)] rounded-[10px] flex flex-col min-w-0">
+            <aside aria-label="Battle story" class="sim-panel sheet lg:col-span-1 bg-[var(--card)] border border-[var(--border)] rounded-[10px] flex flex-col min-w-0">
+              <button class="sheet-handle" aria-label="Expand or collapse the story panel"></button>
               <div id="sim-unit-card" class="hidden flex-1 min-h-0 overflow-y-auto custom-scroll p-4 flex flex-col gap-3"></div>
               <div id="sim-story" class="flex-1 min-h-0 flex flex-col">
               <div class="p-4 border-b border-[var(--border)] flex flex-col gap-1">

@@ -126,7 +126,60 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
     }
     .sim-notch:hover { color: var(--foreground); }
     .sim-notch[aria-current="step"] { color: var(--accent); border-left-color: var(--accent); font-weight: 600; }
-    @media (max-width: 1023px) { .sim-panel { height: auto; min-height: 0; } }
+
+    /* ---- Responsive: phones < 768px, tablets 768-1023px, desktop >= 1024px ---- */
+    .mobile-only { display: none; }
+    select { max-width: 100%; min-width: 0; }
+    .sheet-handle { display: none; }
+    .view-menu-item { display: block; width: 100%; text-align: left; padding: 10px 12px; font-size: 15px; color: var(--muted-foreground); }
+    .view-menu-item:hover, .view-menu-item[aria-current="page"] { color: var(--foreground); background: var(--background); }
+
+    /* Bottom sheet (map battle panel, battle story panel): peeks at 30%, opens to 90% */
+    @media (max-width: 1023px) {
+      .sheet {
+        position: fixed !important; left: 0; right: 0; bottom: var(--sheet-bottom, 0px);
+        height: 90vh !important; min-height: 0 !important; z-index: 35; margin: 0 !important;
+        border-radius: 10px 10px 0 0 !important; box-shadow: 0 -4px 16px rgb(0 0 0 / 0.35);
+        transform: translateY(60vh); transition: transform 200ms ease-out;
+      }
+      .sheet.sheet-full { transform: translateY(0); }
+      .sheet.sheet-dragging { transition: none; }
+      .sheet-handle {
+        display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+        width: 100%; height: 32px; touch-action: none; cursor: grab;
+      }
+      .sheet-handle::before { content: ''; width: 40px; height: 4px; border-radius: 2px; background: var(--border); }
+      body[data-view="battle-page"] main, body.map-panel-open main { padding-bottom: calc(30vh + 72px) !important; }
+      .sim-stage { height: calc(70vh - 236px) !important; min-height: 260px !important; }
+    }
+
+    @media (max-width: 767px) {
+      .mobile-only { display: flex; }
+      #app-bar > div:first-child { height: 48px; gap: 4px; padding-left: 12px; padding-right: 8px; }
+      #view-tabs, #app-search { display: none; }
+      #app-bar.search-open #app-search {
+        display: block; position: absolute; left: 0; right: 0; top: 48px; z-index: 45;
+        padding: 8px 12px; background: var(--card); border-bottom: 1px solid var(--border);
+      }
+      #app-bar.search-open #app-search input { width: 100%; height: 44px; }
+      #app-bar h1 { font-size: 20px; }
+      main { padding: 8px !important; }
+      #map-canvas-wrap { height: calc(100vh - 48px - 44px - 64px - 24px) !important; min-height: 320px; }
+      /* sim controls fixed at the bottom, within thumb reach; the story sheet sits on top of them */
+      #sim-controls { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; height: 60px; min-height: 0; padding-top: 0; padding-bottom: 0; gap: 8px; }
+      #sim-time-readout, #sim-replay-btn { display: none !important; }
+      .sim-panel.sheet { --sheet-bottom: 60px; }
+      .sim-stage { height: calc(70vh - 244px) !important; min-height: 220px !important; }
+      /* battle header wraps: back + title on one row, switcher + Details on the next */
+      #battle-header { height: auto; flex-wrap: wrap; row-gap: 4px; }
+      #battle-header h2 { flex: 1 1 0; min-width: 0; font-size: 20px; }
+      #battle-header > div:last-child { margin-left: 0; width: 100%; }
+      #battle-page-select { flex: 1 1 0; min-width: 0; max-width: none; }
+      #sim-controls > div.relative { min-width: 0; }
+    }
+    @media (max-width: 479px) {
+      #sim-speed-group { display: none !important; }
+    }
     @media (pointer: coarse) {
       .cf-btn, #nation-select { min-height: 44px; }
       .app-tab { min-width: 44px; }
@@ -179,7 +232,7 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
       </div>
 
       <!-- View tabs -->
-      <nav aria-label="Views" class="flex-1 min-w-0 h-full flex items-stretch gap-1 overflow-x-auto">
+      <nav id="view-tabs" aria-label="Views" class="flex-1 min-w-0 h-full flex items-stretch gap-1 overflow-x-auto">
         <button id="tab-map" onclick="switchMainView('map')" class="app-tab" aria-current="page">Map</button>
         <button id="tab-battle-page" onclick="switchMainView('battle-page')" class="app-tab">Battles</button>
         <button id="tab-tank-page" onclick="switchMainView('tank-page')" class="app-tab">Tanks</button>
@@ -188,8 +241,13 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
         <button id="tab-matrix" onclick="switchMainView('matrix')" class="app-tab">Tech tree</button>
       </nav>
 
-      <!-- Search + theme -->
-      <div class="relative shrink-0">
+      <!-- Search + theme (phones: search behind an icon, views behind a menu) -->
+      <div class="mobile-only flex-1"></div>
+      <button onclick="toggleMobileSearch()" aria-label="Search" aria-expanded="false" id="mobile-search-btn"
+        class="mobile-only shrink-0 w-11 h-11 rounded-md items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+        <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      </button>
+      <div id="app-search" class="relative shrink-0">
         <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted-foreground)]"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
         <input
           id="search-input"
@@ -202,6 +260,20 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
         <button id="clear-search" onclick="clearSearch()" aria-label="Clear search" class="hidden absolute right-1 top-1/2 -translate-y-1/2 w-7 h-7 rounded text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
           <svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mx-auto"><path d="M6 6l12 12M18 6L6 18"/></svg>
         </button>
+      </div>
+      <div class="mobile-only relative shrink-0">
+        <button onclick="toggleViewMenu()" id="view-menu-btn" aria-label="Views" aria-haspopup="menu" aria-expanded="false" aria-controls="view-menu"
+          class="w-11 h-11 rounded-md flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--foreground)]">
+          <svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+        </button>
+        <div id="view-menu" role="menu" class="hidden absolute right-0 top-12 w-52 rounded-[10px] border border-[var(--border)] bg-[var(--card)] shadow-lg py-1 z-50">
+          <button role="menuitem" data-view-link="map" onclick="switchMainView('map')" class="view-menu-item">Map</button>
+          <button role="menuitem" data-view-link="battle-page" onclick="switchMainView('battle-page')" class="view-menu-item">Battles</button>
+          <button role="menuitem" data-view-link="tank-page" onclick="switchMainView('tank-page')" class="view-menu-item">Tanks</button>
+          <button role="menuitem" data-view-link="graph" onclick="switchMainView('graph')" class="view-menu-item">Lineage</button>
+          <button role="menuitem" data-view-link="duel" onclick="switchMainView('duel')" class="view-menu-item">Compare</button>
+          <button role="menuitem" data-view-link="matrix" onclick="switchMainView('matrix')" class="view-menu-item">Tech tree</button>
+        </div>
       </div>
       <button onclick="toggleTheme()" id="theme-toggle-btn" aria-label="Switch light or dark theme" title="Switch light or dark theme"
         class="shrink-0 w-11 h-11 rounded-md flex items-center justify-center text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--background)]">
@@ -320,7 +392,8 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
         </div>
 
         <!-- Side panel for the battle clicked on the map -->
-        <aside id="map-panel" aria-label="Selected battle" class="hidden lg:col-span-5 bg-[var(--card)] border border-[var(--border)] rounded-[10px] flex flex-col h-[820px]">
+        <aside id="map-panel" aria-label="Selected battle" class="sheet hidden lg:col-span-5 bg-[var(--card)] border border-[var(--border)] rounded-[10px] flex flex-col h-[820px]">
+          <button class="sheet-handle" aria-label="Expand or collapse the battle panel"></button>
           <div class="flex items-center gap-2 px-5 py-3 border-b border-[var(--border)]">
             <button onclick="watchSelectedBattle()" class="h-10 px-4 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-semibold">Watch battle</button>
             <button onclick="closeMapBattle()" aria-label="Close battle panel" class="ml-auto w-10 h-10 rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--background)]">
@@ -337,7 +410,7 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
     <!-- ===================================================================== -->
     <section id="view-battle-page" class="hidden flex-col gap-4">
       <!-- Battle header (48px): back to the map, title, battle switcher, jump to details -->
-      <div class="h-12 flex items-center gap-3 min-w-0">
+      <div id="battle-header" class="h-12 flex items-center gap-3 min-w-0">
         <button onclick="switchMainView('map')" class="shrink-0 h-10 px-2 rounded-md text-sm font-semibold text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card)] flex items-center gap-1">
           <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 18l-6-6 6-6"/></svg>
           All battles
@@ -367,7 +440,7 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
     <section id="view-tank-page" class="hidden flex-col gap-4">
       <!-- Tank Selector & Quick Navigation Bar -->
       <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3.5 shadow-md flex flex-wrap items-center justify-between gap-3">
-        <div class="flex flex-wrap items-center gap-2">
+        <div class="flex flex-wrap items-center gap-2 min-w-0 max-w-full">
           <span class="px-2.5 py-1 rounded-lg bg-sky-500/20 text-sky-300 border border-sky-500/40 text-xs font-extrabold">🛡️ ALL 86 TANKS GALLERY &amp; DOSSIER</span>
           <select id="tank-page-select" onchange="openTankPage(this.value)" class="px-3 py-1.5 rounded-lg text-xs font-bold bg-[var(--background)] border border-[var(--border)] text-[var(--foreground)] min-w-[310px]"></select>
           <button onclick="stepTankPage(-1)" class="px-2.5 py-1.5 rounded-lg border border-[var(--border)] bg-[var(--background)] hover:border-amber-500 text-xs font-bold">◀ Prev Tank</button>

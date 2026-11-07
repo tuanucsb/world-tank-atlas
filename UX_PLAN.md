@@ -365,7 +365,7 @@ finding above. Effort assumes features ~30x, architecture ~5x human:CC.
   - Surfaced by: Pass 4 (D13).
   - Files: `tank_atlas_src/build_v2_part2b.py`.
   - Verify: screenshot of the Raseiniai crossroads mid-Phase 2 has no overlapping text.
-- [ ] **T9 (P1, human: ~2 days / CC: ~1h): responsive: phone/tablet bottom sheet, phone app bar, bottom controls.**
+- [x] **T9 (P1, human: ~2 days / CC: ~1h): responsive: phone/tablet bottom sheet, phone app bar, bottom controls.**
   - Surfaced by: Pass 6 (D15, D19).
   - Files: `tank_atlas_src/build_v2_part1.py`, `build_v2_part2b.py`.
   - Verify: at 375x812 the header is 48px and the battlefield plus control bar are visible; at 768 and 1024 the sheet is used; no horizontal scroll.
