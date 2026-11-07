@@ -129,6 +129,25 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
 
     /* ---- Responsive: phones < 768px, tablets 768-1023px, desktop >= 1024px ---- */
     .mobile-only { display: none; }
+    /* Battle details: Side A vs Side B table */
+    .battle-compare th, .battle-compare td { text-align: left; vertical-align: top; padding: 10px 12px; border-bottom: 1px solid var(--border); }
+    .battle-compare thead th { font-weight: 600; border-bottom-width: 2px; }
+    .battle-compare thead th.side-a { color: var(--side-a); border-bottom-color: var(--side-a); }
+    .battle-compare thead th.side-b { color: var(--side-b); border-bottom-color: var(--side-b); }
+    .battle-compare tbody th { font-weight: 500; color: var(--muted-foreground); white-space: nowrap; }
+    .battle-compare td { color: var(--foreground); }
+    .battle-compare .cell-note { display: block; color: var(--muted-foreground); font-size: 14px; }
+    @media (max-width: 639px) {
+      .battle-compare, .battle-compare thead, .battle-compare tbody { display: block; }
+      .battle-compare tr { display: grid; grid-template-columns: 1fr 1fr; column-gap: 12px; border-bottom: 1px solid var(--border); padding: 8px 0; }
+      .battle-compare thead tr { padding-top: 0; }
+      .battle-compare th, .battle-compare td { border-bottom: 0; padding: 4px 0; }
+      .battle-compare thead th:first-child { display: none; }
+      .battle-compare thead th.side-a, .battle-compare thead th.side-b { border-bottom: 2px solid; }
+      .battle-compare tbody th, .battle-compare td[colspan] { grid-column: 1 / -1; }
+      .battle-compare tbody th { white-space: normal; }
+    }
+    .killcam-item[aria-expanded="true"] { border-color: var(--accent); background: rgb(var(--acc-400) / 0.08); }
     /* Photos: tinted placeholder while loading; blueprint fallback when they fail */
     main img, #tank-popup-modal img { background-color: var(--surface-raised); }
     .photo-fallback { position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--surface-raised); }

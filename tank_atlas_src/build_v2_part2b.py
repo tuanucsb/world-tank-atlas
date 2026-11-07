@@ -538,19 +538,41 @@ JS_PART_2B = r"""
       state.sim.killcamTick = 0;
       const b = BATTLE_MAP[state.selectedBattleId] || BATTLES[0];
       const scenarios = b.killcam_scenarios || [];
-      scenarios.forEach((sc, i) => {
-        const btn = document.getElementById('killcam-btn-' + i);
-        if (btn) {
-          btn.className = i === idx
-            ? 'p-2.5 rounded-xl border-2 border-rose-400 bg-rose-500/20 text-left transition shadow-lg flex flex-col gap-1'
-            : 'p-2.5 rounded-xl border border-slate-700 bg-slate-950 hover:border-rose-400/60 text-left transition opacity-80 hover:opacity-100 flex flex-col gap-1';
-        }
-      });
       const sc = scenarios[idx];
-      const descEl = document.getElementById('killcam-scenario-desc');
-      if (descEl && sc) {
-        descEl.innerHTML = `<strong class="text-rose-300">💥 ${sc.title}:</strong> <span class="text-slate-200">${sc.desc}</span>`;
-      }
+      const panel = document.getElementById('killcam-panel');
+      const btn = document.getElementById('killcam-btn-' + idx);
+      if (!sc || !panel || !btn) return;
+      scenarios.forEach((_, i) => {
+        const other = document.getElementById('killcam-btn-' + i);
+        if (other) other.setAttribute('aria-expanded', i === idx ? 'true' : 'false');
+      });
+      btn.after(panel); // the X-ray view opens under the chosen engagement
+      document.getElementById('killcam-scenario-desc').textContent = sc.desc;
+      document.getElementById('killcam-canvas').setAttribute('aria-label', `X-ray view: ${sc.title}`);
+    }
+
+    // Table cells get the first clause of long facts; the full text stays in "Losses by cause"
+    function shortFact(text) {
+      const t = String(text || '').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '').trim();
+      const cut = t.split(/\s\(|;\s/)[0];
+      return cut.length > 110 ? cut.slice(0, 107).replace(/\s+\S*$/, '') + '…' : cut;
+    }
+
+    // "749 Tanks (~52 KV-1 & KV-2 Heavy, ...)" -> the breakdown, without repeating the number
+    function countNote(text) {
+      let t = String(text || '').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE0F}]/gu, '').trim();
+      t = t.replace(/^[~≈]?\s*[\d,.–+\s]+(tanks?|armou?red vehicles?|AFVs?)?\b\s*/i, '');
+      t = t.replace(/^&\s*/, 'with ');
+      const inParens = t.match(/^\((.*)\)$/);
+      if (inParens) t = inParens[1];
+      if (!t) return '';
+      return t.length > 110 ? t.slice(0, 107).replace(/\s+\S*$/, '') + '…' : t;
+    }
+
+    function tankLink(tid) {
+      const t = TANK_MAP[tid];
+      if (!t) return '';
+      return `<button onclick="openTankPage('${t.id}')" class="cf-btn">${t.name}</button>`;
     }
 
     function renderBattlePage() {
@@ -770,141 +792,97 @@ JS_PART_2B = r"""
         </div>
 
         <!-- Battle details (below the fold): header, key facts, tanks, losses, kill-cam, media -->
-        <section id="battle-details" aria-label="Battle details" class="scroll-mt-20 bg-[var(--card)] border border-[var(--border)] rounded-[10px] p-5 flex flex-col gap-4">
-          <div class="flex flex-wrap items-start justify-between gap-4 border-b border-[var(--border)] pb-4">
+        <section id="battle-details" aria-label="Battle details" class="scroll-mt-20 bg-[var(--card)] border border-[var(--border)] rounded-[10px] p-5 flex flex-col gap-6">
+          <div class="flex flex-wrap items-start justify-between gap-4">
+            <div class="min-w-0 max-w-3xl">
+              <h2 class="text-xl font-semibold text-[var(--foreground)]">Battle details</h2>
+              <p class="text-sm text-[var(--muted-foreground)] mt-1">${b.date} · ${b.location}</p>
+              <p class="text-base text-[var(--foreground)] mt-3 leading-relaxed">${b.summary}</p>
+            </div>
+            <button onclick="jumpToBattleOnMap('${b.id}')" class="shrink-0 h-10 px-4 rounded-md border border-[var(--border)] text-sm font-semibold text-[var(--foreground)] hover:border-amber-400">Show on the map</button>
+          </div>
+
+          <!-- Side A vs Side B: one row per fact, so the two sides read across -->
+          <div class="overflow-x-auto">
+            <table class="battle-compare w-full text-sm">
+              <caption class="sr-only">${b.name}: Side A compared with Side B</caption>
+              <thead>
+                <tr>
+                  <th scope="col" class="w-40"><span class="sr-only">Fact</span></th>
+                  <th scope="col" class="side-a">Side A</th>
+                  <th scope="col" class="side-b">Side B</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr><th scope="row">Forces</th><td class="font-semibold">${b.side_a.name}</td><td class="font-semibold">${b.side_b.name}</td></tr>
+                <tr>
+                  <th scope="row">Tanks committed</th>
+                  <td><span class="tabular-nums font-semibold">${b.side_a_num}</span>${countNote(b.side_a.count) ? `<span class="cell-note">${countNote(b.side_a.count)}</span>` : ''}</td>
+                  <td><span class="tabular-nums font-semibold">${b.side_b_num}</span>${countNote(b.side_b.count) ? `<span class="cell-note">${countNote(b.side_b.count)}</span>` : ''}</td>
+                </tr>
+                <tr>
+                  <th scope="row">Tank types</th>
+                  <td><div class="flex flex-wrap gap-1.5">${b.side_a.tanks.map(tankLink).join('')}</div></td>
+                  <td><div class="flex flex-wrap gap-1.5">${b.side_b.tanks.map(tankLink).join('')}</div></td>
+                </tr>
+                <tr><th scope="row">Losses</th><td>${shortFact(b.losses_a)}</td><td>${shortFact(b.losses_b)}</td></tr>
+                <tr>
+                  <th scope="row">Result</th>
+                  <td class="font-semibold ${b.winner_side === 'A' ? 'text-emerald-400' : ''}">${b.winner_side === 'A' ? 'Won' : (b.winner_side === 'DRAW' ? 'Draw' : 'Lost')}</td>
+                  <td class="font-semibold ${b.winner_side === 'B' ? 'text-emerald-400' : ''}">${b.winner_side === 'B' ? 'Won' : (b.winner_side === 'DRAW' ? 'Draw' : 'Lost')}</td>
+                </tr>
+                <tr><th scope="row">Outcome</th><td colspan="2">${b.outcome}</td></tr>
+                <tr><th scope="row">Range</th><td colspan="2">${b.tactical_zoom.range_m}. ${b.tactical_zoom.key_lesson}</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Full loss detail behind the short "Losses" cells -->
+          <div class="flex flex-col gap-3">
+            <h3 class="text-lg font-semibold text-[var(--foreground)]">Losses by cause</h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              ${renderForensicCard(b.destruction_a, `Side A: ${b.losses_a}`, 'text-sky-400', 'bg-sky-400')}
+              ${renderForensicCard(b.destruction_b, `Side B: ${b.losses_b}`, 'text-rose-400', 'bg-rose-500')}
+            </div>
+          </div>
+
+          <!-- Knock-out scenarios: a list; the chosen one opens its X-ray animation underneath -->
+          <div class="flex flex-col gap-4">
             <div>
-              <div class="flex flex-wrap items-center gap-2">
-                <span class="px-3 py-1 rounded-full text-xs font-extrabold bg-rose-500/20 text-rose-300 border border-rose-500/40">
-                  ⚔️ ${b.date} • ${b.theatre}
-                </span>
-                <span class="px-3 py-1 rounded-full text-xs font-bold bg-amber-500/20 text-amber-300 border border-amber-500/40">
-                  📍 ${b.location} [${b.lat.toFixed(2)}°N, ${b.lon.toFixed(2)}°E]
-                </span>
-                <span class="px-3 py-1 rounded-full text-xs font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
-                  🛡️ ${b.total_tanks}
-                </span>
-              </div>
-              <h2 class="text-2xl sm:text-3xl font-extrabold text-[var(--foreground)] mt-2">${b.name}</h2>
-              <p class="text-sm text-[var(--muted-foreground)] mt-1 max-w-4xl leading-relaxed">${b.summary}</p>
+              <h3 class="text-lg font-semibold text-[var(--foreground)]">How tanks were knocked out</h3>
+              <p class="text-sm text-[var(--muted-foreground)] mt-1">Pick an engagement to see the shell, the armor it hit, and what happened next.</p>
             </div>
-            <button onclick="jumpToBattleOnMap('${b.id}')" class="px-3.5 py-2 rounded-xl bg-sky-600 hover:bg-sky-500 text-white text-xs font-extrabold shadow shrink-0">
-              🌍 Locate on World Map →
-            </button>
-          </div>
-
-          <!-- 4-Card Key Battle Facts: Winner, Defeated, Total Scale, Terrain & Range -->
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
-            <div class="bg-emerald-500/10 border border-emerald-500/40 rounded-xl p-3.5">
-              <div class="text-xs font-extrabold text-emerald-400 uppercase">🏆 Victorious Side (Who Won)</div>
-              <div class="text-sm font-extrabold text-[var(--foreground)] mt-1">${b.winner}</div>
-              <div class="text-xs text-[var(--muted-foreground)] mt-1">${b.outcome}</div>
-            </div>
-            <div class="bg-rose-500/10 border border-rose-500/40 rounded-xl p-3.5">
-              <div class="text-xs font-extrabold text-rose-400 uppercase">💥 Defeated / Halted Side</div>
-              <div class="text-sm font-extrabold text-[var(--foreground)] mt-1">${b.loser}</div>
-              <div class="text-xs text-rose-300 mt-1">🟦 Lost: ${b.losses_a}<br/>🟥 Lost: ${b.losses_b}</div>
-            </div>
-            <div class="bg-amber-500/10 border border-amber-500/40 rounded-xl p-3.5">
-              <div class="text-xs font-extrabold text-amber-400 uppercase">📊 Total Armor Involved</div>
-              <div class="text-sm font-extrabold text-amber-300 mt-1">${b.total_tanks}</div>
-              <div class="text-xs text-[var(--muted-foreground)] mt-1">🟦 ${b.side_a.count}<br/>🟥 ${b.side_b.count}</div>
-            </div>
-            <div class="bg-sky-500/10 border border-sky-500/40 rounded-xl p-3.5">
-              <div class="text-xs font-extrabold text-sky-400 uppercase">🎯 Engagement Range &amp; Lesson</div>
-              <div class="text-sm font-extrabold text-sky-300 mt-1">Range: ${b.tactical_zoom.range_m}</div>
-              <div class="text-xs text-[var(--muted-foreground)] mt-1">${b.tactical_zoom.key_lesson}</div>
-            </div>
-          </div>
-
-          <!-- ========================================================================= -->
-          <!-- HOW THE TANKS GOT DESTROYED — FORENSIC LOSS BREAKDOWN (SIDE A & SIDE B)   -->
-          <!-- ========================================================================= -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
-            ${renderForensicCard(
-              b.destruction_a,
-              `💥 How ${b.side_a.name} Tanks Got Destroyed (${b.losses_a})`,
-              'text-sky-400',
-              'bg-sky-400'
-            )}
-            ${renderForensicCard(
-              b.destruction_b,
-              `💥 How ${b.side_b.name} Tanks Got Destroyed (${b.losses_b})`,
-              'text-rose-400',
-              'bg-rose-500'
-            )}
-          </div>
-
-          <!-- Participating Tanks Roster with Real Photos & Direct Popup / Page Buttons -->
-          <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 pt-2">
-            <div class="bg-sky-500/5 border border-sky-500/30 rounded-xl p-4 flex flex-col gap-2.5">
-              <div class="flex items-center justify-between">
-                <span class="text-sm font-extrabold text-sky-400">🟦 ${b.side_a.flag || ''} ${b.side_a.name} — Participating Tank Models (${b.side_a.tanks.length})</span>
-                <span class="text-xs font-bold text-slate-300">${b.side_a.count}</span>
-              </div>
-              <div class="text-xs text-rose-300 font-semibold">Recorded Losses: ${b.losses_a}</div>
-              <div class="flex flex-col gap-2 mt-1">
-                ${b.side_a.tanks.map(tid => renderParticipTankCard(tid, 'sky')).join('')}
-              </div>
-            </div>
-
-            <div class="bg-rose-500/5 border border-rose-500/30 rounded-xl p-4 flex flex-col gap-2.5">
-              <div class="flex items-center justify-between">
-                <span class="text-sm font-extrabold text-rose-400">🟥 ${b.side_b.flag || ''} ${b.side_b.name} — Participating Tank Models (${b.side_b.tanks.length})</span>
-                <span class="text-xs font-bold text-slate-300">${b.side_b.count}</span>
-              </div>
-              <div class="text-xs text-rose-300 font-semibold">Recorded Losses: ${b.losses_b}</div>
-              <div class="flex flex-col gap-2 mt-1">
-                ${b.side_b.tanks.map(tid => renderParticipTankCard(tid, 'rose')).join('')}
-              </div>
-            </div>
-          </div>
-
-          <!-- ========================================================================= -->
-          <!-- 💥 HOW THE TANKS BLEW UP: INTERACTIVE BALLISTIC KILL-CAM + REAL WRECKAGE  -->
-          <!-- ========================================================================= -->
-          <div class="bg-slate-950 border-2 border-rose-500/70 rounded-2xl p-5 shadow-2xl flex flex-col gap-4">
-            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-3">
-              <div>
-                <div class="flex items-center gap-2">
-                  <span class="px-2.5 py-1 rounded bg-rose-600 text-white text-xs font-extrabold">💥 BALLISTIC ARMOR PENETRATION &amp; COOK-OFF KILL-CAM</span>
-                  <h3 class="text-lg font-extrabold text-white">How the Tanks Blew Up in ${b.name} — X-Ray Ballistics, Real Wreckage Photos &amp; Combat Footage</h3>
-                </div>
-                <p class="text-xs text-slate-300 mt-1">Select a historical engagement below to inspect the exact shell penetration vs. armor thickness, internal spall cone, ammunition cook-off, and turret blow-off physics.</p>
-              </div>
-            </div>
-
-            <!-- Scenario Selector Buttons + Interactive X-Ray Kill-Cam Canvas -->
-            <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch">
-              <div class="lg:col-span-5 flex flex-col gap-2">
-                <div class="text-xs font-extrabold text-amber-400 uppercase">🎯 Select Historical Duel / Kill-Cam Scenario (${killScenarios.length}):</div>
-                ${killScenarios.map((sc, idx) => `
-                  <button id="killcam-btn-${idx}" onclick="selectKillCamScenario(${idx})" class="${idx === 0 ? 'p-2.5 rounded-xl border-2 border-rose-400 bg-rose-500/20 text-left transition shadow-lg flex flex-col gap-1' : 'p-2.5 rounded-xl border border-slate-700 bg-slate-900/90 hover:border-rose-400/60 text-left transition opacity-85 hover:opacity-100 flex flex-col gap-1'}">
-                    <div class="flex items-center justify-between gap-2">
-                      <span class="text-xs font-extrabold text-white">⚔️ ${sc.title}</span>
-                      <span class="px-2 py-0.5 rounded text-xs font-mono font-extrabold ${sc.result === 'RICOCHET' ? 'bg-amber-500/20 text-amber-300 border border-amber-400/40' : 'bg-rose-500/30 text-rose-200 border border-rose-400/50'}">${sc.result.replace(/_/g, ' ')}</span>
-                    </div>
-                    <div class="text-xs font-mono text-sky-300">Projectile: ${sc.shell} (${sc.pen_mm}mm Pen vs ${sc.armor_mm}mm Armor)</div>
+            <ul class="flex flex-col gap-2">
+              ${killScenarios.map((sc, idx) => `
+                <li>
+                  <button id="killcam-btn-${idx}" onclick="selectKillCamScenario(${idx})" aria-expanded="${idx === 0}" aria-controls="killcam-panel"
+                    class="killcam-item w-full text-left rounded-md border border-[var(--border)] px-3 py-2.5 flex flex-col gap-0.5 hover:border-amber-400">
+                    <span class="flex flex-wrap items-center gap-2">
+                      <span class="font-semibold text-[var(--foreground)]">${sc.title}</span>
+                      <span class="text-xs px-1.5 py-0.5 rounded ${sc.result === 'RICOCHET' ? 'text-amber-400 border border-amber-400/50' : 'text-rose-400 border border-rose-400/50'}">${sc.result.replace(/_/g, ' ').toLowerCase()}</span>
+                    </span>
+                    <span class="text-sm text-[var(--muted-foreground)]">${sc.shell}: ${sc.pen_mm} mm penetration against ${sc.armor_mm} mm armor</span>
                   </button>
-                `).join('')}
-              </div>
+                  ${idx === 0 ? `
+                  <div id="killcam-panel" class="mt-2 rounded-[10px] overflow-hidden border border-[var(--border)]">
+                    <div class="relative h-[270px] w-full bg-[var(--canvas-bg)]">
+                      <canvas id="killcam-canvas" role="img" aria-label="X-ray view: ${sc.title}" class="w-full h-full block"></canvas>
+                    </div>
+                    <p id="killcam-scenario-desc" class="px-4 py-3 text-sm text-[var(--foreground)] leading-relaxed">${sc.desc}</p>
+                  </div>` : ''}
+                </li>`).join('')}
+            </ul>
+          </div>
 
-              <div class="lg:col-span-7 bg-slate-900 border border-slate-700 rounded-xl overflow-hidden flex flex-col justify-between">
-                <div class="relative h-[270px] w-full bg-[#050c16]">
-                  <canvas id="killcam-canvas" class="w-full h-full block"></canvas>
-                </div>
-                <div id="killcam-scenario-desc" class="px-4 py-3 bg-slate-950 border-t border-slate-800 text-xs leading-relaxed">
-                  ${killScenarios[0] ? `<strong class="text-rose-300">💥 ${killScenarios[0].title}:</strong> <span class="text-slate-200">${killScenarios[0].desc}</span>` : ''}
-                </div>
-              </div>
-            </div>
-
+          <div class="flex flex-col gap-4">
+            <h3 class="text-lg font-semibold text-[var(--foreground)]">Maps, wreckage and footage</h3>
             <!-- Real Historical Operational Maps + Real Knocked-Out Tank Wreckage Gallery + Playable Archival Video Footage -->
             <div class="grid grid-cols-1 lg:grid-cols-12 gap-4 pt-2 border-t border-slate-800">
               <!-- Column 1 (4 cols): Real Historical Operational Battle Map(s) -->
               <div class="lg:col-span-4 bg-slate-900/90 border border-amber-500/40 rounded-xl p-3.5 flex flex-col gap-2.5">
                 <div class="flex items-center justify-between">
-                  <span class="text-xs font-extrabold text-amber-400 uppercase">🗺️ Real Historical Battle Maps</span>
-                  ${b.real_map_url ? `<a href="${b.real_map_url}" target="_blank" rel="noopener" class="text-xs font-bold text-sky-400 hover:underline">Open Full-Res Map ↗</a>` : ''}
+                  <span class="text-xs font-extrabold text-amber-400 uppercase">Historical maps</span>
+                  ${b.real_map_url ? `<a href="${b.real_map_url}" target="_blank" rel="noopener" class="text-xs font-bold text-sky-400 hover:underline">Full size ↗</a>` : ''}
                 </div>
                 ${b.real_map_url ? `
                   <a href="${b.real_map_url}" target="_blank" rel="noopener" class="block rounded-lg overflow-hidden border border-slate-700 hover:border-amber-400 transition">

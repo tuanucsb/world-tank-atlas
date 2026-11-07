@@ -385,7 +385,7 @@ finding above. Effort assumes features ~30x, architecture ~5x human:CC.
   - Surfaced by: Pass 2 (D8).
   - Files: `tank_atlas_src/build_v2_part2a.py`.
   - Verify: block `upload.wikimedia.org` in devtools; every card shows a blueprint and "Photo unavailable", with no layout shift.
-- [ ] **T14 (P2, human: ~4h / CC: ~20min + copy edits): battle details comparison table and knock-out list.**
+- [x] **T14 (P2, human: ~4h / CC: ~20min + copy edits): battle details comparison table and knock-out list.**
   - Surfaced by: Pass 7 (D20).
   - Files: `tank_atlas_src/build_v2_part2b.py`, `battle_timelines_and_destruction.py`.
   - Verify: each of the 27 battles renders the table with no cell overflowing at 1440 and 375.
