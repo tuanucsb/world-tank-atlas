@@ -377,7 +377,7 @@ finding above. Effort assumes features ~30x, architecture ~5x human:CC.
   - Surfaced by: Pass 6 (D18).
   - Files: `tank_atlas_src/build_v2_part2b.py`.
   - Verify: with emulated `prefers-reduced-motion: reduce`, no tracers or explosions draw, and the speed defaults to 0.5x.
-- [ ] **T12 (P2, human: ~2h / CC: ~10min): search and filter no-results state.**
+- [x] **T12 (P2, human: ~2h / CC: ~10min): search and filter no-results state.**
   - Surfaced by: Pass 2 (D6).
   - Files: `tank_atlas_src/build_v2_part1.py`, `build_v2_part2a.py`.
   - Verify: "zzqq" shows the message, Clear and 3 suggestions; Ukraine + Japan on the map shows Reset filters.

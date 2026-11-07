@@ -426,6 +426,82 @@ JS_PART_2A = r"""
       return true;
     }
 
+    // Era chips -> battles (explicit: battle "era" numbers do not line up with the chips).
+    // Korea 1950 and Chawinda 1965 only show under "All eras".
+    const BATTLE_CONFLICTS = {
+      ww1_interwar: ['flers_1916', 'cambrai_1917', 'villers_bretonneux_1918', 'khalkhin_gol_1939'],
+      ww2: ['arras_1940', 'hannut_1940', 'brody_1941', 'raseiniai_1941', 'el_alamein_1942', 'kursk_1943', 'arracourt_1944', 'bulge_1944', 'normandy_1944', 'balaton_1945'],
+      vietnam: ['lang_vei_ben_het_1968', 'an_loc_dong_ha_1972', 'xuan_loc_saigon_1975'],
+      arab_israeli: ['sinai_1967', 'chinese_farm_1973', 'valley_of_tears_1973', 'bekaa_1982'],
+      gulf: ['dezful_1981', 'easting_1991', 'baghdad_2003'],
+      ukraine: ['ukraine_2022_2024']
+    };
+
+    function isBattleVisible(b) {
+      if (state.conflictFilter !== 'all' && BATTLE_CONFLICTS[state.conflictFilter] && !BATTLE_CONFLICTS[state.conflictFilter].includes(b.id)) return false;
+      if (state.nationFilter !== 'all') {
+        const fielded = [...b.side_a.tanks, ...b.side_b.tanks].some(id => TANK_MAP[id] && TANK_MAP[id].nation === state.nationFilter);
+        if (!fielded) return false;
+      }
+      if (state.searchQuery) {
+        const q = state.searchQuery.toLowerCase();
+        const text = `${b.name} ${b.location} ${b.theatre} ${b.year}`.toLowerCase();
+        const tankHit = [...b.side_a.tanks, ...b.side_b.tanks].some(id => TANK_MAP[id] && TANK_MAP[id].name.toLowerCase().includes(q));
+        if (!text.includes(q) && !tankHit) return false;
+      }
+      return true;
+    }
+
+    function isFiltering() {
+      return !!state.searchQuery || state.conflictFilter !== 'all' || state.nationFilter !== 'all';
+    }
+
+    // Every search or filter change goes through here, so all lists and the map agree
+    function applyFilters() {
+      renderMapTankPhotoStrip();
+      renderMapBattleStrip();
+      if (typeof renderAll85TanksPhotoGrid === 'function') renderAll85TanksPhotoGrid();
+      renderCatalogAndMatrix();
+      const nT = TANKS.filter(isTankVisible).length, nB = BATTLES.filter(isBattleVisible).length;
+      const summary = document.getElementById('atlas-summary');
+      if (summary) summary.textContent = isFiltering()
+        ? `${nT} of ${TANKS.length} tanks and ${nB} of ${BATTLES.length} battles shown`
+        : `${TANKS.length} tanks and ${BATTLES.length} battles, 1916–2026`;
+      const mapEmpty = document.getElementById('map-no-results');
+      if (mapEmpty) {
+        mapEmpty.classList.toggle('hidden', nT + nB > 0);
+        if (nT + nB === 0) mapEmpty.innerHTML = noResultsHTML();
+      }
+    }
+
+    function resetFilters() {
+      document.getElementById('search-input').value = '';
+      state.searchQuery = '';
+      document.getElementById('clear-search').classList.add('hidden');
+      document.getElementById('nation-select').value = 'all';
+      state.nationFilter = 'all';
+      setConflictFilter('all'); // also calls applyFilters()
+    }
+
+    // Shared "nothing matches" message: says what was searched, offers a way back and three suggestions
+    function noResultsHTML() {
+      const q = state.searchQuery;
+      const esc = (t) => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      const title = q ? `No tanks or battles match "${esc(q)}"` : 'No tanks or battles match these filters';
+      const action = q && state.conflictFilter === 'all' && state.nationFilter === 'all'
+        ? '<button onclick="clearSearch()" class="h-10 px-4 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-semibold">Clear search</button>'
+        : '<button onclick="resetFilters()" class="h-10 px-4 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-semibold">Reset filters</button>';
+      return `
+        <p class="font-semibold text-[var(--foreground)]">${title}</p>
+        <p class="text-sm text-[var(--muted-foreground)]">Check the spelling, or try one of these:</p>
+        <div class="flex flex-wrap items-center gap-2 mt-1">
+          ${action}
+          <button onclick="resetFilters(); openTankPage('tiger_i')" class="cf-btn">Tiger I</button>
+          <button onclick="resetFilters(); openBattlePage('kursk_1943')" class="cf-btn">Kursk 1943</button>
+          <button onclick="resetFilters(); openTankPage('t34_85')" class="cf-btn">T-34-85</button>
+        </div>`;
+    }
+
     function getGraphNodePos(t, W, H) {
       const padLeft = 152, padRight = 55, padTop = 78, padBottom = 42;
       const usableW = Math.max(850, W) - padLeft - padRight;
@@ -484,27 +560,21 @@ JS_PART_2A = r"""
 
     function setConflictFilter(cf) {
       state.conflictFilter = cf;
-      document.querySelectorAll('.cf-btn').forEach(b => {
+      document.querySelectorAll('[id^="cf-"].cf-btn').forEach(b => {
         b.setAttribute('aria-pressed', b.id === 'cf-' + cf ? 'true' : 'false');
       });
-      renderMapTankPhotoStrip();
-      if (typeof renderAll85TanksPhotoGrid === 'function') renderAll85TanksPhotoGrid();
-      renderCatalogAndMatrix();
+      applyFilters();
     }
 
     function setNationFilter(nat) {
       state.nationFilter = nat;
-      renderMapTankPhotoStrip();
-      if (typeof renderAll85TanksPhotoGrid === 'function') renderAll85TanksPhotoGrid();
-      renderCatalogAndMatrix();
+      applyFilters();
     }
 
     function handleSearch(val) {
       state.searchQuery = val.trim();
       document.getElementById('clear-search').classList.toggle('hidden', !state.searchQuery);
-      renderMapTankPhotoStrip();
-      if (typeof renderAll85TanksPhotoGrid === 'function') renderAll85TanksPhotoGrid();
-      renderCatalogAndMatrix();
+      applyFilters();
     }
 
     function clearSearch() {
@@ -1508,6 +1578,7 @@ JS_PART_2A = r"""
       if (state.mapPinMode !== 'battles') {
         TANKS.forEach(t => {
           if (typeof t.origin_lon !== 'number' || typeof t.origin_lat !== 'number') return;
+          if (!isTankVisible(t)) return;
           const s = lonLatToScreen(t.origin_lon, t.origin_lat, W, H);
           if (s.x < -40 || s.x > W + 40 || s.y < -40 || s.y > H + 40) return;
 
@@ -1553,6 +1624,7 @@ JS_PART_2A = r"""
 
       if (state.mapPinMode !== 'tanks') {
         BATTLES.forEach(b => {
+          if (!isBattleVisible(b) && b.id !== state.mapBattleId) return;
           const s = lonLatToScreen(b.lon, b.lat, W, H);
           if (s.x < -60 || s.x > W + 60 || s.y < -60 || s.y > H + 60) return;
 
@@ -1611,7 +1683,9 @@ JS_PART_2A = r"""
     function renderMapBattleStrip() {
       const strip = document.getElementById('map-battle-strip');
       if (!strip) return;
-      strip.innerHTML = BATTLES.map(b => {
+      const shown = BATTLES.filter(isBattleVisible);
+      if (!shown.length) { strip.innerHTML = '<p class="text-sm text-slate-300 px-2 py-1">No battles match.</p>'; return; }
+      strip.innerHTML = shown.map(b => {
         const active = b.id === state.mapBattleId;
         const isVN = b.id.includes('1968') || b.id.includes('1972') || b.id.includes('1975');
         return `
@@ -1630,7 +1704,9 @@ JS_PART_2A = r"""
     function renderMapTankPhotoStrip() {
       const strip = document.getElementById('map-tank-photo-strip');
       if (!strip) return;
-      strip.innerHTML = TANKS.map(t => {
+      const shown = TANKS.filter(isTankVisible);
+      if (!shown.length) { strip.innerHTML = '<p class="text-sm text-[var(--muted-foreground)] py-2">No tanks match.</p>'; return; }
+      strip.innerHTML = shown.map(t => {
         const nat = NATION_MAP[t.nation] || { flag: '🛡️' };
         return `
           <div onclick="openTankPopup('${t.id}')" class="shrink-0 w-36 rounded-lg bg-slate-950 border border-slate-700 hover:border-amber-400 p-1.5 cursor-pointer transition group flex flex-col gap-1 shadow" title="Click to open interactive Tank Popup for ${t.name}">

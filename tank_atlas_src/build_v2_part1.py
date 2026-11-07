@@ -136,6 +136,7 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
     .app-tab[aria-selected="true"] { color: var(--foreground); border-bottom-color: var(--accent); }
     kbd { font-family: inherit; font-size: 13px; padding: 1px 6px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; color: var(--foreground); background: var(--background); }
     select { max-width: 100%; min-width: 0; }
+    #filter-row select { flex-shrink: 0; max-width: none; } /* the row scrolls sideways instead */
     .sheet-handle { display: none; }
     .view-menu-item { display: block; width: 100%; text-align: left; padding: 10px 12px; font-size: 15px; color: var(--muted-foreground); }
     .view-menu-item:hover, .view-menu-item[aria-current="page"] { color: var(--foreground); background: var(--background); }
@@ -359,6 +360,8 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
           <div class="relative w-full h-[690px] bg-[#06101e]" id="map-canvas-wrap">
             <canvas id="world-map-canvas" role="img" aria-label="World map of __N_BATTLES__ tank battles. Use the battle list along the bottom of the map to choose one." class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
 
+            <!-- Nothing matches the search/filters: shown by applyFilters() -->
+            <div id="map-no-results" role="status" class="hidden absolute inset-x-4 top-1/3 z-20 mx-auto max-w-md flex flex-col gap-1 p-4 rounded-[10px] border border-amber-400 bg-[var(--card)] shadow-lg"></div>
             <!-- First-visit hint; hidden once a battle is selected -->
             <div id="map-hint" class="absolute top-3 left-3 z-20 px-3 py-1.5 rounded-md bg-[var(--card)]/95 border border-[var(--border)] text-sm text-[var(--foreground)] pointer-events-none">
               Click a battle to explore

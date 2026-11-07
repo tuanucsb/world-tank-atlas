@@ -135,6 +135,7 @@
     .app-tab[aria-selected="true"] { color: var(--foreground); border-bottom-color: var(--accent); }
     kbd { font-family: inherit; font-size: 13px; padding: 1px 6px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; color: var(--foreground); background: var(--background); }
     select { max-width: 100%; min-width: 0; }
+    #filter-row select { flex-shrink: 0; max-width: none; } /* the row scrolls sideways instead */
     .sheet-handle { display: none; }
     .view-menu-item { display: block; width: 100%; text-align: left; padding: 10px 12px; font-size: 15px; color: var(--muted-foreground); }
     .view-menu-item:hover, .view-menu-item[aria-current="page"] { color: var(--foreground); background: var(--background); }
@@ -358,6 +359,8 @@
           <div class="relative w-full h-[690px] bg-[#06101e]" id="map-canvas-wrap">
             <canvas id="world-map-canvas" role="img" aria-label="World map of 27 tank battles. Use the battle list along the bottom of the map to choose one." class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
 
+            <!-- Nothing matches the search/filters: shown by applyFilters() -->
+            <div id="map-no-results" role="status" class="hidden absolute inset-x-4 top-1/3 z-20 mx-auto max-w-md flex flex-col gap-1 p-4 rounded-[10px] border border-amber-400 bg-[var(--card)] shadow-lg"></div>
             <!-- First-visit hint; hidden once a battle is selected -->
             <div id="map-hint" class="absolute top-3 left-3 z-20 px-3 py-1.5 rounded-md bg-[var(--card)]/95 border border-[var(--border)] text-sm text-[var(--foreground)] pointer-events-none">
               Click a battle to explore
@@ -1100,6 +1103,82 @@
       return true;
     }
 
+    // Era chips -> battles (explicit: battle "era" numbers do not line up with the chips).
+    // Korea 1950 and Chawinda 1965 only show under "All eras".
+    const BATTLE_CONFLICTS = {
+      ww1_interwar: ['flers_1916', 'cambrai_1917', 'villers_bretonneux_1918', 'khalkhin_gol_1939'],
+      ww2: ['arras_1940', 'hannut_1940', 'brody_1941', 'raseiniai_1941', 'el_alamein_1942', 'kursk_1943', 'arracourt_1944', 'bulge_1944', 'normandy_1944', 'balaton_1945'],
+      vietnam: ['lang_vei_ben_het_1968', 'an_loc_dong_ha_1972', 'xuan_loc_saigon_1975'],
+      arab_israeli: ['sinai_1967', 'chinese_farm_1973', 'valley_of_tears_1973', 'bekaa_1982'],
+      gulf: ['dezful_1981', 'easting_1991', 'baghdad_2003'],
+      ukraine: ['ukraine_2022_2024']
+    };
+
+    function isBattleVisible(b) {
+      if (state.conflictFilter !== 'all' && BATTLE_CONFLICTS[state.conflictFilter] && !BATTLE_CONFLICTS[state.conflictFilter].includes(b.id)) return false;
+      if (state.nationFilter !== 'all') {
+        const fielded = [...b.side_a.tanks, ...b.side_b.tanks].some(id => TANK_MAP[id] && TANK_MAP[id].nation === state.nationFilter);
+        if (!fielded) return false;
+      }
+      if (state.searchQuery) {
+        const q = state.searchQuery.toLowerCase();
+        const text = `${b.name} ${b.location} ${b.theatre} ${b.year}`.toLowerCase();
+        const tankHit = [...b.side_a.tanks, ...b.side_b.tanks].some(id => TANK_MAP[id] && TANK_MAP[id].name.toLowerCase().includes(q));
+        if (!text.includes(q) && !tankHit) return false;
+      }
+      return true;
+    }
+
+    function isFiltering() {
+      return !!state.searchQuery || state.conflictFilter !== 'all' || state.nationFilter !== 'all';
+    }
+
+    // Every search or filter change goes through here, so all lists and the map agree
+    function applyFilters() {
+      renderMapTankPhotoStrip();
+      renderMapBattleStrip();
+      if (typeof renderAll85TanksPhotoGrid === 'function') renderAll85TanksPhotoGrid();
+      renderCatalogAndMatrix();
+      const nT = TANKS.filter(isTankVisible).length, nB = BATTLES.filter(isBattleVisible).length;
+      const summary = document.getElementById('atlas-summary');
+      if (summary) summary.textContent = isFiltering()
+        ? `${nT} of ${TANKS.length} tanks and ${nB} of ${BATTLES.length} battles shown`
+        : `${TANKS.length} tanks and ${BATTLES.length} battles, 1916–2026`;
+      const mapEmpty = document.getElementById('map-no-results');
+      if (mapEmpty) {
+        mapEmpty.classList.toggle('hidden', nT + nB > 0);
+        if (nT + nB === 0) mapEmpty.innerHTML = noResultsHTML();
+      }
+    }
+
+    function resetFilters() {
+      document.getElementById('search-input').value = '';
+      state.searchQuery = '';
+      document.getElementById('clear-search').classList.add('hidden');
+      document.getElementById('nation-select').value = 'all';
+      state.nationFilter = 'all';
+      setConflictFilter('all'); // also calls applyFilters()
+    }
+
+    // Shared "nothing matches" message: says what was searched, offers a way back and three suggestions
+    function noResultsHTML() {
+      const q = state.searchQuery;
+      const esc = (t) => String(t).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+      const title = q ? `No tanks or battles match "${esc(q)}"` : 'No tanks or battles match these filters';
+      const action = q && state.conflictFilter === 'all' && state.nationFilter === 'all'
+        ? '<button onclick="clearSearch()" class="h-10 px-4 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-semibold">Clear search</button>'
+        : '<button onclick="resetFilters()" class="h-10 px-4 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-semibold">Reset filters</button>';
+      return `
+        <p class="font-semibold text-[var(--foreground)]">${title}</p>
+        <p class="text-sm text-[var(--muted-foreground)]">Check the spelling, or try one of these:</p>
+        <div class="flex flex-wrap items-center gap-2 mt-1">
+          ${action}
+          <button onclick="resetFilters(); openTankPage('tiger_i')" class="cf-btn">Tiger I</button>
+          <button onclick="resetFilters(); openBattlePage('kursk_1943')" class="cf-btn">Kursk 1943</button>
+          <button onclick="resetFilters(); openTankPage('t34_85')" class="cf-btn">T-34-85</button>
+        </div>`;
+    }
+
     function getGraphNodePos(t, W, H) {
       const padLeft = 152, padRight = 55, padTop = 78, padBottom = 42;
       const usableW = Math.max(850, W) - padLeft - padRight;
@@ -1158,27 +1237,21 @@
 
     function setConflictFilter(cf) {
       state.conflictFilter = cf;
-      document.querySelectorAll('.cf-btn').forEach(b => {
+      document.querySelectorAll('[id^="cf-"].cf-btn').forEach(b => {
         b.setAttribute('aria-pressed', b.id === 'cf-' + cf ? 'true' : 'false');
       });
-      renderMapTankPhotoStrip();
-      if (typeof renderAll85TanksPhotoGrid === 'function') renderAll85TanksPhotoGrid();
-      renderCatalogAndMatrix();
+      applyFilters();
     }
 
     function setNationFilter(nat) {
       state.nationFilter = nat;
-      renderMapTankPhotoStrip();
-      if (typeof renderAll85TanksPhotoGrid === 'function') renderAll85TanksPhotoGrid();
-      renderCatalogAndMatrix();
+      applyFilters();
     }
 
     function handleSearch(val) {
       state.searchQuery = val.trim();
       document.getElementById('clear-search').classList.toggle('hidden', !state.searchQuery);
-      renderMapTankPhotoStrip();
-      if (typeof renderAll85TanksPhotoGrid === 'function') renderAll85TanksPhotoGrid();
-      renderCatalogAndMatrix();
+      applyFilters();
     }
 
     function clearSearch() {
@@ -2182,6 +2255,7 @@
       if (state.mapPinMode !== 'battles') {
         TANKS.forEach(t => {
           if (typeof t.origin_lon !== 'number' || typeof t.origin_lat !== 'number') return;
+          if (!isTankVisible(t)) return;
           const s = lonLatToScreen(t.origin_lon, t.origin_lat, W, H);
           if (s.x < -40 || s.x > W + 40 || s.y < -40 || s.y > H + 40) return;
 
@@ -2227,6 +2301,7 @@
 
       if (state.mapPinMode !== 'tanks') {
         BATTLES.forEach(b => {
+          if (!isBattleVisible(b) && b.id !== state.mapBattleId) return;
           const s = lonLatToScreen(b.lon, b.lat, W, H);
           if (s.x < -60 || s.x > W + 60 || s.y < -60 || s.y > H + 60) return;
 
@@ -2285,7 +2360,9 @@
     function renderMapBattleStrip() {
       const strip = document.getElementById('map-battle-strip');
       if (!strip) return;
-      strip.innerHTML = BATTLES.map(b => {
+      const shown = BATTLES.filter(isBattleVisible);
+      if (!shown.length) { strip.innerHTML = '<p class="text-sm text-slate-300 px-2 py-1">No battles match.</p>'; return; }
+      strip.innerHTML = shown.map(b => {
         const active = b.id === state.mapBattleId;
         const isVN = b.id.includes('1968') || b.id.includes('1972') || b.id.includes('1975');
         return `
@@ -2304,7 +2381,9 @@
     function renderMapTankPhotoStrip() {
       const strip = document.getElementById('map-tank-photo-strip');
       if (!strip) return;
-      strip.innerHTML = TANKS.map(t => {
+      const shown = TANKS.filter(isTankVisible);
+      if (!shown.length) { strip.innerHTML = '<p class="text-sm text-[var(--muted-foreground)] py-2">No tanks match.</p>'; return; }
+      strip.innerHTML = shown.map(t => {
         const nat = NATION_MAP[t.nation] || { flag: '🛡️' };
         return `
           <div onclick="openTankPopup('${t.id}')" class="shrink-0 w-36 rounded-lg bg-slate-950 border border-slate-700 hover:border-amber-400 p-1.5 cursor-pointer transition group flex flex-col gap-1 shadow" title="Click to open interactive Tank Popup for ${t.name}">
@@ -2591,7 +2670,12 @@
     function renderAll85TanksPhotoGrid() {
       const grid = document.getElementById('all-85-tanks-photo-grid');
       if (!grid) return;
-      grid.innerHTML = TANKS.map(t => {
+      const shown = TANKS.filter(isTankVisible);
+      if (!shown.length) {
+        grid.innerHTML = `<div class="col-span-full flex flex-col gap-1 p-4 rounded-[10px] border border-amber-400 bg-[var(--card)]">${noResultsHTML()}</div>`;
+        return;
+      }
+      grid.innerHTML = shown.map(t => {
         const nat = NATION_MAP[t.nation] || { flag: '🛡️', color: '#38bdf8' };
         const isSel = t.id === state.selectedTankId;
         const imgUrl = t.photo_url || t.image_url;

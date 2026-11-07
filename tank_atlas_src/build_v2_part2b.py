@@ -70,7 +70,12 @@ JS_PART_2B = r"""
     function renderAll85TanksPhotoGrid() {
       const grid = document.getElementById('all-85-tanks-photo-grid');
       if (!grid) return;
-      grid.innerHTML = TANKS.map(t => {
+      const shown = TANKS.filter(isTankVisible);
+      if (!shown.length) {
+        grid.innerHTML = `<div class="col-span-full flex flex-col gap-1 p-4 rounded-[10px] border border-amber-400 bg-[var(--card)]">${noResultsHTML()}</div>`;
+        return;
+      }
+      grid.innerHTML = shown.map(t => {
         const nat = NATION_MAP[t.nation] || { flag: '🛡️', color: '#38bdf8' };
         const isSel = t.id === state.selectedTankId;
         const imgUrl = t.photo_url || t.image_url;
