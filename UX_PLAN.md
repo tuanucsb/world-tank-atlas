@@ -369,7 +369,7 @@ finding above. Effort assumes features ~30x, architecture ~5x human:CC.
   - Surfaced by: Pass 6 (D15, D19).
   - Files: `tank_atlas_src/build_v2_part1.py`, `build_v2_part2b.py`.
   - Verify: at 375x812 the header is 48px and the battlefield plus control bar are visible; at 768 and 1024 the sheet is used; no horizontal scroll.
-- [ ] **T10 (P1, human: ~1 day / CC: ~40min): a11y: tablist, focus rings, focusable pins, sim shortcuts, aria-live feed.**
+- [x] **T10 (P1, human: ~1 day / CC: ~40min): a11y: tablist, focus rings, focusable pins, sim shortcuts, aria-live feed.**
   - Surfaced by: Pass 6 (D17).
   - Files: `tank_atlas_src/build_v2_part1.py`, `build_v2_part2a.py`, `build_v2_part2b.py`.
   - Verify: the full journey works with keyboard only; VoiceOver announces the phase change; feed announcements are throttled.

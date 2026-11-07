@@ -169,6 +169,20 @@ JS_PART_2A = r"""
       document.documentElement.classList.toggle('light-theme');
     }
 
+    // View tabs: arrow keys / Home / End move between tabs and open the view (roving tabindex)
+    document.addEventListener('keydown', (e) => {
+      const tab = e.target.closest && e.target.closest('#view-tabs [role="tab"]');
+      if (!tab) return;
+      const tabs = [...document.querySelectorAll('#view-tabs [role="tab"]')];
+      const i = tabs.indexOf(tab);
+      const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+      if (next === undefined) return;
+      e.preventDefault();
+      const target = tabs[(next + tabs.length) % tabs.length];
+      target.focus();
+      target.click();
+    });
+
     function toggleViewMenu(open) {
       const menu = document.getElementById('view-menu');
       const btn = document.getElementById('view-menu-btn');
@@ -517,10 +531,14 @@ JS_PART_2A = r"""
           sec.classList.remove('hidden');
           sec.classList.add('flex');
           tab.setAttribute('aria-current', 'page');
+          tab.setAttribute('aria-selected', 'true');
+          tab.tabIndex = 0;
         } else {
           sec.classList.add('hidden');
           sec.classList.remove('flex');
           tab.removeAttribute('aria-current');
+          tab.setAttribute('aria-selected', 'false');
+          tab.tabIndex = -1;
         }
       });
       document.getElementById('filter-row').classList.toggle('hidden', !FILTERED_VIEWS.includes(view));
@@ -1590,7 +1608,7 @@ JS_PART_2A = r"""
         const active = b.id === state.mapBattleId;
         const isVN = b.id.includes('1968') || b.id.includes('1972') || b.id.includes('1975');
         return `
-          <button onclick="selectBattle('${b.id}', true)" class="shrink-0 px-2.5 py-1.5 rounded-md border text-left transition ${
+          <button onclick="selectBattle('${b.id}', true)" aria-label="${b.name}, ${b.year}" aria-pressed="${active}" class="shrink-0 px-2.5 py-1.5 rounded-md border text-left transition ${
             active
               ? 'bg-amber-500 text-slate-950 border-amber-300 font-extrabold shadow'
               : (isVN ? 'bg-cyan-950/90 border-cyan-500/60 text-cyan-200 hover:border-cyan-300' : 'bg-slate-900 border-slate-700 text-slate-300 hover:text-white')

@@ -657,7 +657,7 @@ JS_PART_2B = r"""
                 <div id="battle-sim-leaflet-map" class="absolute inset-0 z-0 hidden opacity-70"></div>
                 <img id="battle-sim-hist-map" src="${b.real_map_url || ''}" alt="Historical map of ${b.name}" class="absolute inset-0 w-full h-full object-cover opacity-45 pointer-events-none z-0" />
                 <div class="absolute inset-0 bg-slate-950/35 pointer-events-none z-[1]"></div>
-                <canvas id="battle-sim-canvas" class="relative z-10 w-full h-full block cursor-pointer"></canvas>
+                <canvas id="battle-sim-canvas" role="img" aria-label="${b.name}: battlefield" class="relative z-10 w-full h-full block cursor-pointer"></canvas>
                 <div class="sim-scale-note absolute bottom-2 right-2 z-[15] max-w-[calc(100%-1rem)] px-2.5 py-1 rounded-md bg-[var(--card)]/90 border border-[var(--border)] text-xs text-[var(--muted-foreground)] pointer-events-auto"
                   title="Phases, tank counts and losses come from historical sources. Unit positions and movements on the map are illustrative.">
                   <span class="text-sky-400 tabular-nums">${countersA === b.side_a_num ? `${countersA} tanks, one counter each` : `${countersA} counters for ${b.side_a_num} tanks`}</span> ·
@@ -714,6 +714,18 @@ JS_PART_2B = r"""
                   }).join('')}
                   <div class="sim-loss-strip" title="Tanks knocked out over time: Side A above, Side B below">${lossStrip}</div>
                   <input id="sim-scrubber" type="range" min="0" max="1" step="0.004" value="${state.sim.progress}" oninput="scrubBattleSim(this.value)" aria-label="Battle timeline" class="w-full accent-amber-400 cursor-pointer" />
+                </div>
+                <div class="relative shrink-0 hidden md:block">
+                  <button id="sim-keys-btn" onclick="toggleSimKeys()" aria-label="Keyboard shortcuts" aria-expanded="false" aria-controls="sim-keys" title="Keyboard shortcuts"
+                    class="w-9 h-9 rounded-md border border-[var(--border)] text-sm font-semibold text-[var(--muted-foreground)] hover:text-[var(--foreground)]">?</button>
+                  <div id="sim-keys" role="dialog" aria-label="Keyboard shortcuts" class="hidden absolute bottom-12 right-0 w-64 rounded-[10px] border border-[var(--border)] bg-[var(--card)] shadow-lg p-3 z-30">
+                    <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm text-[var(--foreground)]">
+                      <dt><kbd>Space</kbd></dt><dd>Play or pause</dd>
+                      <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Previous or next phase</dd>
+                      <dt><kbd>Esc</kbd></dt><dd>Close the tank card or this list</dd>
+                      <dt><kbd>?</kbd></dt><dd>Show this list</dd>
+                    </dl>
+                  </div>
                 </div>
                 <div id="sim-speed-group" class="shrink-0 flex items-center gap-1" role="group" aria-label="Speed">
                   <button data-sim-speed="0.5" onclick="setSimSpeed(0.5)" class="cf-btn" aria-pressed="${state.sim.speed === 0.5}">0.5×</button>
@@ -1402,6 +1414,81 @@ JS_PART_2B = r"""
       });
     }
 
+    function toggleSimKeys(open) {
+      const box = document.getElementById('sim-keys');
+      const btn = document.getElementById('sim-keys-btn');
+      if (!box || !btn) return;
+      const show = open === undefined ? box.classList.contains('hidden') : open;
+      box.classList.toggle('hidden', !show);
+      btn.setAttribute('aria-expanded', show ? 'true' : 'false');
+    }
+
+    function jumpToPhase(delta) {
+      const b = BATTLE_MAP[state.selectedBattleId] || BATTLES[0];
+      const phases = b.phases || [];
+      if (!phases.length) return;
+      const n = phases.length;
+      const starts = phases.map((ph, i) => (ph.range && typeof ph.range[0] === 'number') ? ph.range[0] : i / n);
+      let cur = 0;
+      starts.forEach((r0, i) => { if (state.sim.progress >= r0) cur = i; });
+      const target = Math.max(0, Math.min(n - 1, cur + delta));
+      setBattleSimProgress(starts[target] * 100 + 0.1);
+      if (state.sim.status === 'ready') setSimStatus('paused');
+      announce(`Phase ${target + 1} of ${n}: ${phases[target].title || ''}`);
+    }
+
+    // Battle shortcuts. Space and arrows are left alone on buttons, links and form fields,
+    // which have their own keyboard behaviour (and on the scrubber, which uses the arrows).
+    document.addEventListener('keydown', (e) => {
+      if (state.mainView !== 'battle-page' || e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target;
+      const inField = t.closest && t.closest('input, select, textarea, [contenteditable="true"]');
+      const onControl = t.closest && t.closest('button, a, [role="tab"]');
+      if (e.key === 'Escape') { toggleSimKeys(false); return; }
+      if (inField) return;
+      if (e.key === '?') { e.preventDefault(); toggleSimKeys(); return; }
+      if (onControl) return;
+      if (e.key === ' ') {
+        e.preventDefault();
+        if (state.sim.status === 'ready' || (state.sim.status === 'paused' && state.sim.phaseCard != null)) setSimStatus('playing');
+        else toggleSimPlay();
+      } else if (e.key === 'ArrowRight') { e.preventDefault(); jumpToPhase(1); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); jumpToPhase(-1); }
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#sim-keys, #sim-keys-btn')) toggleSimKeys(false);
+    });
+
+    // Screen-reader announcer: at most one message every 3s; knock-outs in between are summarized
+    const announcer = { phase: null, kills: [], last: 0, timer: null };
+    function announce(text) {
+      announcer.phase = text;
+      scheduleAnnounce();
+    }
+    function announceKill(text) {
+      announcer.kills.push(text);
+      scheduleAnnounce();
+    }
+    function scheduleAnnounce() {
+      if (announcer.timer) return;
+      const wait = Math.max(0, 3000 - (performance.now() - announcer.last));
+      announcer.timer = setTimeout(flushAnnounce, wait);
+    }
+    function flushAnnounce() {
+      announcer.timer = null;
+      const el = document.getElementById('sim-announcer');
+      if (!el || state.mainView !== 'battle-page') { announcer.phase = null; announcer.kills = []; return; }
+      const parts = [];
+      if (announcer.phase) parts.push(announcer.phase);
+      if (announcer.kills.length === 1) parts.push(announcer.kills[0]);
+      else if (announcer.kills.length > 1) { const more = announcer.kills.length - 1; parts.push(`${announcer.kills[0]}, and ${more} more ${more === 1 ? 'tank' : 'tanks'} knocked out`); }
+      announcer.phase = null;
+      announcer.kills = [];
+      if (!parts.length) return;
+      el.textContent = parts.join('. ');
+      announcer.last = performance.now();
+    }
+
     function stripEmoji(text) {
       return String(text || '').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, '').replace(/\s+/g, ' ').trim();
     }
@@ -1418,7 +1505,13 @@ JS_PART_2B = r"""
       }
       killCallouts.lastP = p;
       simScreenAgents.forEach(a => {
-        if (a.isWreck && !killCallouts.seen.has(a.id)) killCallouts.seen.set(a.id, now);
+        if (a.isWreck && !killCallouts.seen.has(a.id)) {
+          killCallouts.seen.set(a.id, now);
+          if (state.sim.playing) {
+            const cause = stripEmoji(a.killCause).replace(/\s*\(.*\)\s*$/, '');
+            announceKill(`${stripEmoji(a.label)} knocked out${cause ? ': ' + cause : ''}`);
+          }
+        }
       });
       const live = simScreenAgents
         .filter(a => a.isWreck && now - killCallouts.seen.get(a.id) < 2000)
@@ -1618,7 +1711,10 @@ JS_PART_2B = r"""
 
       // Update Chronological Kill Feed & Phase Log
       if (state.sim.lastPhaseLogged !== phaseIdx) {
+        const firstLog = state.sim.lastPhaseLogged === -1;
         state.sim.lastPhaseLogged = phaseIdx;
+        canvas.setAttribute('aria-label', `${b.name}: battlefield, ${curPhase.phase} of ${nPh}${rawPhase.night ? ', at night' : ''}. ${curPhase.title}`);
+        if (!firstLog && state.sim.playing) announce(`${curPhase.phase} of ${nPh}: ${curPhase.title}`);
         const logEl = document.getElementById('sim-telemetry-log');
         if (logEl && phases.length) {
           logEl.innerHTML = phases.slice(0, phaseIdx + 1).reverse().map((ph, idx) => `

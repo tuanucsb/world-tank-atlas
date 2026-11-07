@@ -129,6 +129,9 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
 
     /* ---- Responsive: phones < 768px, tablets 768-1023px, desktop >= 1024px ---- */
     .mobile-only { display: none; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    .app-tab[aria-selected="true"] { color: var(--foreground); border-bottom-color: var(--accent); }
+    kbd { font-family: inherit; font-size: 13px; padding: 1px 6px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; color: var(--foreground); background: var(--background); }
     select { max-width: 100%; min-width: 0; }
     .sheet-handle { display: none; }
     .view-menu-item { display: block; width: 100%; text-align: left; padding: 10px 12px; font-size: 15px; color: var(--muted-foreground); }
@@ -233,13 +236,13 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
       </div>
 
       <!-- View tabs -->
-      <nav id="view-tabs" aria-label="Views" class="flex-1 min-w-0 h-full flex items-stretch gap-1 overflow-x-auto">
-        <button id="tab-map" onclick="switchMainView('map')" class="app-tab" aria-current="page">Map</button>
-        <button id="tab-battle-page" onclick="switchMainView('battle-page')" class="app-tab">Battles</button>
-        <button id="tab-tank-page" onclick="switchMainView('tank-page')" class="app-tab">Tanks</button>
-        <button id="tab-graph" onclick="switchMainView('graph')" class="app-tab">Lineage</button>
-        <button id="tab-duel" onclick="switchMainView('duel')" class="app-tab">Compare</button>
-        <button id="tab-matrix" onclick="switchMainView('matrix')" class="app-tab">Tech tree</button>
+      <nav id="view-tabs" role="tablist" aria-label="Views" class="flex-1 min-w-0 h-full flex items-stretch gap-1 overflow-x-auto">
+        <button id="tab-map" role="tab" aria-selected="true" aria-controls="view-map" tabindex="0" onclick="switchMainView('map')" class="app-tab" aria-current="page">Map</button>
+        <button id="tab-battle-page" role="tab" aria-selected="false" aria-controls="view-battle-page" tabindex="-1" onclick="switchMainView('battle-page')" class="app-tab">Battles</button>
+        <button id="tab-tank-page" role="tab" aria-selected="false" aria-controls="view-tank-page" tabindex="-1" onclick="switchMainView('tank-page')" class="app-tab">Tanks</button>
+        <button id="tab-graph" role="tab" aria-selected="false" aria-controls="view-graph" tabindex="-1" onclick="switchMainView('graph')" class="app-tab">Lineage</button>
+        <button id="tab-duel" role="tab" aria-selected="false" aria-controls="view-duel" tabindex="-1" onclick="switchMainView('duel')" class="app-tab">Compare</button>
+        <button id="tab-matrix" role="tab" aria-selected="false" aria-controls="view-matrix" tabindex="-1" onclick="switchMainView('matrix')" class="app-tab">Tech tree</button>
       </nav>
 
       <!-- Search + theme (phones: search behind an icon, views behind a menu) -->
@@ -321,13 +324,15 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
 
   <!-- Main Workspace Container -->
   <main class="flex-1 max-w-[1860px] w-full mx-auto p-4 flex flex-col gap-4">
+    <!-- Screen-reader announcements for the battle (phase changes, knock-outs), throttled in JS -->
+    <div id="sim-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
     <!-- Shown by the router when a link points at a battle or tank that doesn't exist -->
     <div id="route-notice" role="status" class="hidden flex flex-col gap-1 rounded-[10px] border border-amber-400 bg-[var(--card)] p-4"></div>
 
     <!-- ===================================================================== -->
     <!-- VIEW 1 (DEFAULT): WORLD TANK BATTLES & 85 TANKS MAP + POPUPS          -->
     <!-- ===================================================================== -->
-    <section id="view-map" class="flex flex-col gap-3">
+    <section id="view-map" role="tabpanel" aria-labelledby="tab-map" class="flex flex-col gap-3">
       <!-- Map toolbar: what to show + zoom. Theatre jumps live in the filter row. -->
       <div class="bg-[var(--card)] border border-[var(--border)] rounded-[10px] px-3 py-2 flex flex-wrap items-center gap-2">
         <span class="text-xs font-semibold text-[var(--muted-foreground)]">Show</span>
@@ -349,7 +354,7 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
           </div>
 
           <div class="relative w-full h-[690px] bg-[#06101e]" id="map-canvas-wrap">
-            <canvas id="world-map-canvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
+            <canvas id="world-map-canvas" role="img" aria-label="World map of __N_BATTLES__ tank battles. Use the battle list along the bottom of the map to choose one." class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
 
             <!-- First-visit hint; hidden once a battle is selected -->
             <div id="map-hint" class="absolute top-3 left-3 z-20 px-3 py-1.5 rounded-md bg-[var(--card)]/95 border border-[var(--border)] text-sm text-[var(--foreground)] pointer-events-none">
@@ -409,7 +414,7 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
     <!-- ===================================================================== -->
     <!-- VIEW 2: DEDICATED BATTLE PAGE, 5-PHASE TIMELINE & DESTRUCTION SIM     -->
     <!-- ===================================================================== -->
-    <section id="view-battle-page" class="hidden flex-col gap-4">
+    <section id="view-battle-page" role="tabpanel" aria-labelledby="tab-battle-page" class="hidden flex-col gap-4">
       <!-- Battle header (48px): back to the map, title, battle switcher, jump to details -->
       <div id="battle-header" class="h-12 flex items-center gap-3 min-w-0">
         <button onclick="switchMainView('map')" class="shrink-0 h-10 px-2 rounded-md text-sm font-semibold text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card)] flex items-center gap-1">
@@ -438,7 +443,7 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
     <!-- ===================================================================== -->
     <!-- VIEW 3: ALL 86 TANKS PHOTO GALLERY & DEDICATED TANK DOSSIER PAGE      -->
     <!-- ===================================================================== -->
-    <section id="view-tank-page" class="hidden flex-col gap-4">
+    <section id="view-tank-page" role="tabpanel" aria-labelledby="tab-tank-page" class="hidden flex-col gap-4">
       <!-- Tank Selector & Quick Navigation Bar -->
       <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3.5 shadow-md flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-2 min-w-0 max-w-full">
@@ -481,7 +486,7 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
     <!-- ===================================================================== -->
     <!-- VIEW 4: INTERACTIVE TANK LINEAGE, SIMILARITY & COMBAT GRAPH (85)      -->
     <!-- ===================================================================== -->
-    <section id="view-graph" class="hidden flex-col gap-3">
+    <section id="view-graph" role="tabpanel" aria-labelledby="tab-graph" class="hidden flex-col gap-3">
       <!-- 7-Era Interactive Stepper Bar -->
       <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3 shadow-md flex flex-col gap-2">
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -551,7 +556,7 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
     <!-- ===================================================================== -->
     <!-- VIEW 5: HEAD-TO-HEAD TANK DUEL COMPARATOR                             -->
     <!-- ===================================================================== -->
-    <section id="view-duel" class="hidden flex-col gap-4">
+    <section id="view-duel" role="tabpanel" aria-labelledby="tab-duel" class="hidden flex-col gap-4">
       <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 shadow-md flex flex-col gap-4">
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] pb-4">
           <div>
@@ -588,7 +593,7 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
     <!-- ===================================================================== -->
     <!-- VIEW 6: 2D TECH-TREE MATRIX, VIETNAM WAR SPECIAL DOSSIER & CATALOG    -->
     <!-- ===================================================================== -->
-    <section id="view-matrix" class="hidden flex-col gap-4">
+    <section id="view-matrix" role="tabpanel" aria-labelledby="tab-matrix" class="hidden flex-col gap-4">
       <!-- Special Feature Banner: Did the Vietnam War Involve Tank Battles? -->
       <div class="bg-gradient-to-r from-cyan-950/80 via-slate-900 to-rose-950/70 border-2 border-cyan-500/50 rounded-xl p-5 shadow-lg flex flex-col gap-3">
         <div class="flex flex-wrap items-center justify-between gap-2">

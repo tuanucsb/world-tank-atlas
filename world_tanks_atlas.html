@@ -128,6 +128,9 @@
 
     /* ---- Responsive: phones < 768px, tablets 768-1023px, desktop >= 1024px ---- */
     .mobile-only { display: none; }
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+    .app-tab[aria-selected="true"] { color: var(--foreground); border-bottom-color: var(--accent); }
+    kbd { font-family: inherit; font-size: 13px; padding: 1px 6px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; color: var(--foreground); background: var(--background); }
     select { max-width: 100%; min-width: 0; }
     .sheet-handle { display: none; }
     .view-menu-item { display: block; width: 100%; text-align: left; padding: 10px 12px; font-size: 15px; color: var(--muted-foreground); }
@@ -232,13 +235,13 @@
       </div>
 
       <!-- View tabs -->
-      <nav id="view-tabs" aria-label="Views" class="flex-1 min-w-0 h-full flex items-stretch gap-1 overflow-x-auto">
-        <button id="tab-map" onclick="switchMainView('map')" class="app-tab" aria-current="page">Map</button>
-        <button id="tab-battle-page" onclick="switchMainView('battle-page')" class="app-tab">Battles</button>
-        <button id="tab-tank-page" onclick="switchMainView('tank-page')" class="app-tab">Tanks</button>
-        <button id="tab-graph" onclick="switchMainView('graph')" class="app-tab">Lineage</button>
-        <button id="tab-duel" onclick="switchMainView('duel')" class="app-tab">Compare</button>
-        <button id="tab-matrix" onclick="switchMainView('matrix')" class="app-tab">Tech tree</button>
+      <nav id="view-tabs" role="tablist" aria-label="Views" class="flex-1 min-w-0 h-full flex items-stretch gap-1 overflow-x-auto">
+        <button id="tab-map" role="tab" aria-selected="true" aria-controls="view-map" tabindex="0" onclick="switchMainView('map')" class="app-tab" aria-current="page">Map</button>
+        <button id="tab-battle-page" role="tab" aria-selected="false" aria-controls="view-battle-page" tabindex="-1" onclick="switchMainView('battle-page')" class="app-tab">Battles</button>
+        <button id="tab-tank-page" role="tab" aria-selected="false" aria-controls="view-tank-page" tabindex="-1" onclick="switchMainView('tank-page')" class="app-tab">Tanks</button>
+        <button id="tab-graph" role="tab" aria-selected="false" aria-controls="view-graph" tabindex="-1" onclick="switchMainView('graph')" class="app-tab">Lineage</button>
+        <button id="tab-duel" role="tab" aria-selected="false" aria-controls="view-duel" tabindex="-1" onclick="switchMainView('duel')" class="app-tab">Compare</button>
+        <button id="tab-matrix" role="tab" aria-selected="false" aria-controls="view-matrix" tabindex="-1" onclick="switchMainView('matrix')" class="app-tab">Tech tree</button>
       </nav>
 
       <!-- Search + theme (phones: search behind an icon, views behind a menu) -->
@@ -320,13 +323,15 @@
 
   <!-- Main Workspace Container -->
   <main class="flex-1 max-w-[1860px] w-full mx-auto p-4 flex flex-col gap-4">
+    <!-- Screen-reader announcements for the battle (phase changes, knock-outs), throttled in JS -->
+    <div id="sim-announcer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
     <!-- Shown by the router when a link points at a battle or tank that doesn't exist -->
     <div id="route-notice" role="status" class="hidden flex flex-col gap-1 rounded-[10px] border border-amber-400 bg-[var(--card)] p-4"></div>
 
     <!-- ===================================================================== -->
     <!-- VIEW 1 (DEFAULT): WORLD TANK BATTLES & 85 TANKS MAP + POPUPS          -->
     <!-- ===================================================================== -->
-    <section id="view-map" class="flex flex-col gap-3">
+    <section id="view-map" role="tabpanel" aria-labelledby="tab-map" class="flex flex-col gap-3">
       <!-- Map toolbar: what to show + zoom. Theatre jumps live in the filter row. -->
       <div class="bg-[var(--card)] border border-[var(--border)] rounded-[10px] px-3 py-2 flex flex-wrap items-center gap-2">
         <span class="text-xs font-semibold text-[var(--muted-foreground)]">Show</span>
@@ -348,7 +353,7 @@
           </div>
 
           <div class="relative w-full h-[690px] bg-[#06101e]" id="map-canvas-wrap">
-            <canvas id="world-map-canvas" class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
+            <canvas id="world-map-canvas" role="img" aria-label="World map of 27 tank battles. Use the battle list along the bottom of the map to choose one." class="w-full h-full block cursor-grab active:cursor-grabbing"></canvas>
 
             <!-- First-visit hint; hidden once a battle is selected -->
             <div id="map-hint" class="absolute top-3 left-3 z-20 px-3 py-1.5 rounded-md bg-[var(--card)]/95 border border-[var(--border)] text-sm text-[var(--foreground)] pointer-events-none">
@@ -408,7 +413,7 @@
     <!-- ===================================================================== -->
     <!-- VIEW 2: DEDICATED BATTLE PAGE, 5-PHASE TIMELINE & DESTRUCTION SIM     -->
     <!-- ===================================================================== -->
-    <section id="view-battle-page" class="hidden flex-col gap-4">
+    <section id="view-battle-page" role="tabpanel" aria-labelledby="tab-battle-page" class="hidden flex-col gap-4">
       <!-- Battle header (48px): back to the map, title, battle switcher, jump to details -->
       <div id="battle-header" class="h-12 flex items-center gap-3 min-w-0">
         <button onclick="switchMainView('map')" class="shrink-0 h-10 px-2 rounded-md text-sm font-semibold text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card)] flex items-center gap-1">
@@ -437,7 +442,7 @@
     <!-- ===================================================================== -->
     <!-- VIEW 3: ALL 86 TANKS PHOTO GALLERY & DEDICATED TANK DOSSIER PAGE      -->
     <!-- ===================================================================== -->
-    <section id="view-tank-page" class="hidden flex-col gap-4">
+    <section id="view-tank-page" role="tabpanel" aria-labelledby="tab-tank-page" class="hidden flex-col gap-4">
       <!-- Tank Selector & Quick Navigation Bar -->
       <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3.5 shadow-md flex flex-wrap items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-2 min-w-0 max-w-full">
@@ -480,7 +485,7 @@
     <!-- ===================================================================== -->
     <!-- VIEW 4: INTERACTIVE TANK LINEAGE, SIMILARITY & COMBAT GRAPH (85)      -->
     <!-- ===================================================================== -->
-    <section id="view-graph" class="hidden flex-col gap-3">
+    <section id="view-graph" role="tabpanel" aria-labelledby="tab-graph" class="hidden flex-col gap-3">
       <!-- 7-Era Interactive Stepper Bar -->
       <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-3 shadow-md flex flex-col gap-2">
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -550,7 +555,7 @@
     <!-- ===================================================================== -->
     <!-- VIEW 5: HEAD-TO-HEAD TANK DUEL COMPARATOR                             -->
     <!-- ===================================================================== -->
-    <section id="view-duel" class="hidden flex-col gap-4">
+    <section id="view-duel" role="tabpanel" aria-labelledby="tab-duel" class="hidden flex-col gap-4">
       <div class="bg-[var(--card)] border border-[var(--border)] rounded-xl p-5 shadow-md flex flex-col gap-4">
         <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--border)] pb-4">
           <div>
@@ -587,7 +592,7 @@
     <!-- ===================================================================== -->
     <!-- VIEW 6: 2D TECH-TREE MATRIX, VIETNAM WAR SPECIAL DOSSIER & CATALOG    -->
     <!-- ===================================================================== -->
-    <section id="view-matrix" class="hidden flex-col gap-4">
+    <section id="view-matrix" role="tabpanel" aria-labelledby="tab-matrix" class="hidden flex-col gap-4">
       <!-- Special Feature Banner: Did the Vietnam War Involve Tank Battles? -->
       <div class="bg-gradient-to-r from-cyan-950/80 via-slate-900 to-rose-950/70 border-2 border-cyan-500/50 rounded-xl p-5 shadow-lg flex flex-col gap-3">
         <div class="flex flex-wrap items-center justify-between gap-2">
@@ -834,6 +839,20 @@
     function toggleTheme() {
       document.documentElement.classList.toggle('light-theme');
     }
+
+    // View tabs: arrow keys / Home / End move between tabs and open the view (roving tabindex)
+    document.addEventListener('keydown', (e) => {
+      const tab = e.target.closest && e.target.closest('#view-tabs [role="tab"]');
+      if (!tab) return;
+      const tabs = [...document.querySelectorAll('#view-tabs [role="tab"]')];
+      const i = tabs.indexOf(tab);
+      const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+      if (next === undefined) return;
+      e.preventDefault();
+      const target = tabs[(next + tabs.length) % tabs.length];
+      target.focus();
+      target.click();
+    });
 
     function toggleViewMenu(open) {
       const menu = document.getElementById('view-menu');
@@ -1183,10 +1202,14 @@
           sec.classList.remove('hidden');
           sec.classList.add('flex');
           tab.setAttribute('aria-current', 'page');
+          tab.setAttribute('aria-selected', 'true');
+          tab.tabIndex = 0;
         } else {
           sec.classList.add('hidden');
           sec.classList.remove('flex');
           tab.removeAttribute('aria-current');
+          tab.setAttribute('aria-selected', 'false');
+          tab.tabIndex = -1;
         }
       });
       document.getElementById('filter-row').classList.toggle('hidden', !FILTERED_VIEWS.includes(view));
@@ -2256,7 +2279,7 @@
         const active = b.id === state.mapBattleId;
         const isVN = b.id.includes('1968') || b.id.includes('1972') || b.id.includes('1975');
         return `
-          <button onclick="selectBattle('${b.id}', true)" class="shrink-0 px-2.5 py-1.5 rounded-md border text-left transition ${
+          <button onclick="selectBattle('${b.id}', true)" aria-label="${b.name}, ${b.year}" aria-pressed="${active}" class="shrink-0 px-2.5 py-1.5 rounded-md border text-left transition ${
             active
               ? 'bg-amber-500 text-slate-950 border-amber-300 font-extrabold shadow'
               : (isVN ? 'bg-cyan-950/90 border-cyan-500/60 text-cyan-200 hover:border-cyan-300' : 'bg-slate-900 border-slate-700 text-slate-300 hover:text-white')
@@ -3145,7 +3168,7 @@
                 <div id="battle-sim-leaflet-map" class="absolute inset-0 z-0 hidden opacity-70"></div>
                 <img id="battle-sim-hist-map" src="${b.real_map_url || ''}" alt="Historical map of ${b.name}" class="absolute inset-0 w-full h-full object-cover opacity-45 pointer-events-none z-0" />
                 <div class="absolute inset-0 bg-slate-950/35 pointer-events-none z-[1]"></div>
-                <canvas id="battle-sim-canvas" class="relative z-10 w-full h-full block cursor-pointer"></canvas>
+                <canvas id="battle-sim-canvas" role="img" aria-label="${b.name}: battlefield" class="relative z-10 w-full h-full block cursor-pointer"></canvas>
                 <div class="sim-scale-note absolute bottom-2 right-2 z-[15] max-w-[calc(100%-1rem)] px-2.5 py-1 rounded-md bg-[var(--card)]/90 border border-[var(--border)] text-xs text-[var(--muted-foreground)] pointer-events-auto"
                   title="Phases, tank counts and losses come from historical sources. Unit positions and movements on the map are illustrative.">
                   <span class="text-sky-400 tabular-nums">${countersA === b.side_a_num ? `${countersA} tanks, one counter each` : `${countersA} counters for ${b.side_a_num} tanks`}</span> ·
@@ -3202,6 +3225,18 @@
                   }).join('')}
                   <div class="sim-loss-strip" title="Tanks knocked out over time: Side A above, Side B below">${lossStrip}</div>
                   <input id="sim-scrubber" type="range" min="0" max="1" step="0.004" value="${state.sim.progress}" oninput="scrubBattleSim(this.value)" aria-label="Battle timeline" class="w-full accent-amber-400 cursor-pointer" />
+                </div>
+                <div class="relative shrink-0 hidden md:block">
+                  <button id="sim-keys-btn" onclick="toggleSimKeys()" aria-label="Keyboard shortcuts" aria-expanded="false" aria-controls="sim-keys" title="Keyboard shortcuts"
+                    class="w-9 h-9 rounded-md border border-[var(--border)] text-sm font-semibold text-[var(--muted-foreground)] hover:text-[var(--foreground)]">?</button>
+                  <div id="sim-keys" role="dialog" aria-label="Keyboard shortcuts" class="hidden absolute bottom-12 right-0 w-64 rounded-[10px] border border-[var(--border)] bg-[var(--card)] shadow-lg p-3 z-30">
+                    <dl class="grid grid-cols-[auto_1fr] gap-x-3 gap-y-2 text-sm text-[var(--foreground)]">
+                      <dt><kbd>Space</kbd></dt><dd>Play or pause</dd>
+                      <dt><kbd>←</kbd> <kbd>→</kbd></dt><dd>Previous or next phase</dd>
+                      <dt><kbd>Esc</kbd></dt><dd>Close the tank card or this list</dd>
+                      <dt><kbd>?</kbd></dt><dd>Show this list</dd>
+                    </dl>
+                  </div>
                 </div>
                 <div id="sim-speed-group" class="shrink-0 flex items-center gap-1" role="group" aria-label="Speed">
                   <button data-sim-speed="0.5" onclick="setSimSpeed(0.5)" class="cf-btn" aria-pressed="${state.sim.speed === 0.5}">0.5×</button>
@@ -3890,6 +3925,81 @@
       });
     }
 
+    function toggleSimKeys(open) {
+      const box = document.getElementById('sim-keys');
+      const btn = document.getElementById('sim-keys-btn');
+      if (!box || !btn) return;
+      const show = open === undefined ? box.classList.contains('hidden') : open;
+      box.classList.toggle('hidden', !show);
+      btn.setAttribute('aria-expanded', show ? 'true' : 'false');
+    }
+
+    function jumpToPhase(delta) {
+      const b = BATTLE_MAP[state.selectedBattleId] || BATTLES[0];
+      const phases = b.phases || [];
+      if (!phases.length) return;
+      const n = phases.length;
+      const starts = phases.map((ph, i) => (ph.range && typeof ph.range[0] === 'number') ? ph.range[0] : i / n);
+      let cur = 0;
+      starts.forEach((r0, i) => { if (state.sim.progress >= r0) cur = i; });
+      const target = Math.max(0, Math.min(n - 1, cur + delta));
+      setBattleSimProgress(starts[target] * 100 + 0.1);
+      if (state.sim.status === 'ready') setSimStatus('paused');
+      announce(`Phase ${target + 1} of ${n}: ${phases[target].title || ''}`);
+    }
+
+    // Battle shortcuts. Space and arrows are left alone on buttons, links and form fields,
+    // which have their own keyboard behaviour (and on the scrubber, which uses the arrows).
+    document.addEventListener('keydown', (e) => {
+      if (state.mainView !== 'battle-page' || e.metaKey || e.ctrlKey || e.altKey) return;
+      const t = e.target;
+      const inField = t.closest && t.closest('input, select, textarea, [contenteditable="true"]');
+      const onControl = t.closest && t.closest('button, a, [role="tab"]');
+      if (e.key === 'Escape') { toggleSimKeys(false); return; }
+      if (inField) return;
+      if (e.key === '?') { e.preventDefault(); toggleSimKeys(); return; }
+      if (onControl) return;
+      if (e.key === ' ') {
+        e.preventDefault();
+        if (state.sim.status === 'ready' || (state.sim.status === 'paused' && state.sim.phaseCard != null)) setSimStatus('playing');
+        else toggleSimPlay();
+      } else if (e.key === 'ArrowRight') { e.preventDefault(); jumpToPhase(1); }
+      else if (e.key === 'ArrowLeft') { e.preventDefault(); jumpToPhase(-1); }
+    });
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('#sim-keys, #sim-keys-btn')) toggleSimKeys(false);
+    });
+
+    // Screen-reader announcer: at most one message every 3s; knock-outs in between are summarized
+    const announcer = { phase: null, kills: [], last: 0, timer: null };
+    function announce(text) {
+      announcer.phase = text;
+      scheduleAnnounce();
+    }
+    function announceKill(text) {
+      announcer.kills.push(text);
+      scheduleAnnounce();
+    }
+    function scheduleAnnounce() {
+      if (announcer.timer) return;
+      const wait = Math.max(0, 3000 - (performance.now() - announcer.last));
+      announcer.timer = setTimeout(flushAnnounce, wait);
+    }
+    function flushAnnounce() {
+      announcer.timer = null;
+      const el = document.getElementById('sim-announcer');
+      if (!el || state.mainView !== 'battle-page') { announcer.phase = null; announcer.kills = []; return; }
+      const parts = [];
+      if (announcer.phase) parts.push(announcer.phase);
+      if (announcer.kills.length === 1) parts.push(announcer.kills[0]);
+      else if (announcer.kills.length > 1) { const more = announcer.kills.length - 1; parts.push(`${announcer.kills[0]}, and ${more} more ${more === 1 ? 'tank' : 'tanks'} knocked out`); }
+      announcer.phase = null;
+      announcer.kills = [];
+      if (!parts.length) return;
+      el.textContent = parts.join('. ');
+      announcer.last = performance.now();
+    }
+
     function stripEmoji(text) {
       return String(text || '').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, '').replace(/\s+/g, ' ').trim();
     }
@@ -3906,7 +4016,13 @@
       }
       killCallouts.lastP = p;
       simScreenAgents.forEach(a => {
-        if (a.isWreck && !killCallouts.seen.has(a.id)) killCallouts.seen.set(a.id, now);
+        if (a.isWreck && !killCallouts.seen.has(a.id)) {
+          killCallouts.seen.set(a.id, now);
+          if (state.sim.playing) {
+            const cause = stripEmoji(a.killCause).replace(/\s*\(.*\)\s*$/, '');
+            announceKill(`${stripEmoji(a.label)} knocked out${cause ? ': ' + cause : ''}`);
+          }
+        }
       });
       const live = simScreenAgents
         .filter(a => a.isWreck && now - killCallouts.seen.get(a.id) < 2000)
@@ -4106,7 +4222,10 @@
 
       // Update Chronological Kill Feed & Phase Log
       if (state.sim.lastPhaseLogged !== phaseIdx) {
+        const firstLog = state.sim.lastPhaseLogged === -1;
         state.sim.lastPhaseLogged = phaseIdx;
+        canvas.setAttribute('aria-label', `${b.name}: battlefield, ${curPhase.phase} of ${nPh}${rawPhase.night ? ', at night' : ''}. ${curPhase.title}`);
+        if (!firstLog && state.sim.playing) announce(`${curPhase.phase} of ${nPh}: ${curPhase.title}`);
         const logEl = document.getElementById('sim-telemetry-log');
         if (logEl && phases.length) {
           logEl.innerHTML = phases.slice(0, phaseIdx + 1).reverse().map((ph, idx) => `
