@@ -356,6 +356,7 @@ JS_PART_2B = r"""
     // Playback states: 'ready' (just opened, Play overlay), 'playing', 'paused', 'ended' (result overlay).
     // Every start/stop goes through setSimStatus so the button, overlay and loop agree.
     function setSimStatus(status) {
+      if (status !== 'paused') state.sim.phaseCard = null;
       state.sim.status = status;
       state.sim.playing = status === 'playing';
       syncPlayButton();
@@ -366,9 +367,48 @@ JS_PART_2B = r"""
       const overlay = document.getElementById('sim-overlay');
       if (!overlay) return;
       const status = state.sim.status;
-      overlay.classList.toggle('hidden', status !== 'ready' && status !== 'ended');
+      const atPhase = status === 'paused' && state.sim.phaseCard != null;
+      overlay.classList.toggle('hidden', status !== 'ready' && status !== 'ended' && !atPhase);
       document.getElementById('sim-overlay-ready').classList.toggle('hidden', status !== 'ready');
       document.getElementById('sim-overlay-ended').classList.toggle('hidden', status !== 'ended');
+      const phaseCard = document.getElementById('sim-overlay-phase');
+      phaseCard.classList.toggle('hidden', !atPhase);
+      if (atPhase) renderPhaseCard(state.sim.phaseCard);
+    }
+
+    // "Stop at each phase": while playing, crossing into a new phase pauses there with a card
+    function renderPhaseCard(idx) {
+      const b = BATTLE_MAP[state.selectedBattleId] || BATTLES[0];
+      const phases = b.phases || [];
+      const ph = phases[idx];
+      const card = document.getElementById('sim-overlay-phase');
+      if (!ph || !card) return;
+      card.innerHTML = `
+        <div class="text-xs font-semibold uppercase tracking-wide text-amber-400">Phase ${idx + 1} of ${phases.length}${ph.night ? ' · Night' : ''}</div>
+        <div class="text-sm text-[var(--muted-foreground)]">${ph.time || ''}</div>
+        <h3 class="text-lg font-semibold text-[var(--foreground)] leading-snug">${ph.title || ''}</h3>
+        <p class="text-sm text-[var(--muted-foreground)] leading-relaxed line-clamp-4">${ph.desc || ''}</p>
+        <div class="text-sm text-rose-400">${ph.losses_note || ''}</div>
+        <div class="flex flex-wrap items-center gap-2 pt-1">
+          <button onclick="setSimStatus('playing')" class="h-11 px-4 rounded-md bg-amber-500 hover:bg-amber-400 text-slate-950 text-sm font-semibold">Continue</button>
+          <button onclick="setStopAtPhases(false); setSimStatus('playing')" class="h-11 px-3 rounded-md text-sm text-[var(--muted-foreground)] hover:text-[var(--foreground)]">Play without stopping</button>
+        </div>`;
+    }
+
+    function phaseStartCrossed(b, fromP, toP) {
+      const phases = b.phases || [];
+      const n = Math.max(1, phases.length);
+      for (let i = 1; i < phases.length; i++) {
+        const r0 = (phases[i].range && typeof phases[i].range[0] === 'number') ? phases[i].range[0] : i / n;
+        if (fromP < r0 && toP >= r0) return { idx: i, r0 };
+      }
+      return null;
+    }
+
+    function setStopAtPhases(on) {
+      state.sim.stopAtPhases = on;
+      const btn = document.getElementById('sim-stops-btn');
+      if (btn) btn.setAttribute('aria-pressed', on ? 'true' : 'false');
     }
 
     function toggleSimPlay() {
@@ -412,12 +452,14 @@ JS_PART_2B = r"""
 
     function scrubBattleSim(val) {
       state.sim.progress = parseFloat(val);
-      if (state.sim.status === 'ended') setSimStatus('paused');
+      state.sim.phaseCard = null;
+      if (state.sim.status === 'ended') setSimStatus('paused'); else syncSimOverlay();
     }
 
     function setBattleSimProgress(pct) {
       state.sim.progress = Math.min(0.999, Math.max(0, pct / 100));
-      if (state.sim.status === 'ended') setSimStatus('paused');
+      state.sim.phaseCard = null;
+      if (state.sim.status === 'ended') setSimStatus('paused'); else syncSimOverlay();
       const scrub = document.getElementById('sim-scrubber');
       if (scrub) scrub.value = state.sim.progress.toFixed(3);
     }
@@ -632,6 +674,7 @@ JS_PART_2B = r"""
                     <div class="text-lg font-semibold text-white">Play the battle</div>
                     <div class="text-sm text-slate-200">${phases.length} phases, ${b.date}</div>
                   </div>
+                  <div id="sim-overlay-phase" role="status" class="hidden w-full max-w-md rounded-[10px] bg-[var(--card)] border border-[var(--border)] p-5 flex flex-col gap-2"></div>
                   <div id="sim-overlay-ended" role="status" class="hidden w-full max-w-md rounded-[10px] bg-[var(--card)] border border-[var(--border)] p-5 flex flex-col gap-3">
                     <div class="text-xs font-semibold uppercase tracking-wide text-amber-400">Battle over</div>
                     <div>
@@ -703,6 +746,7 @@ JS_PART_2B = r"""
                 <button id="sim-bg-satellite" onclick="setSimMapBgMode('satellite')" class="cf-btn" aria-pressed="false">Satellite</button>
                 <button id="sim-bg-tactical" onclick="setSimMapBgMode('tactical')" class="cf-btn" aria-pressed="false">Grid</button>
                 <button id="sim-hull-btn" onclick="toggleSimHulls()" class="cf-btn" aria-pressed="${state.sim.showHulls !== false}">Tank photos</button>
+                <button id="sim-stops-btn" onclick="setStopAtPhases(state.sim.stopAtPhases === false)" class="cf-btn" aria-pressed="${state.sim.stopAtPhases !== false}" title="Pause at the start of each phase">Stop at each phase</button>
               </div>
             </aside>
           </div>
@@ -1303,6 +1347,61 @@ JS_PART_2B = r"""
       }
     }
 
+    function formationPath(u, W, H) {
+      return {
+        x0: (u.x / 100) * W, y0: (u.y / 100) * H,
+        x1: ((u.tx ?? (u.side === 'A' ? u.x + 14 : u.x - 14)) / 100) * W,
+        y1: ((u.ty ?? u.y) / 100) * H
+      };
+    }
+
+    function drawArrow(ctx, x0, y0, x1, y1, color, width, dashed, head) {
+      const len = Math.hypot(x1 - x0, y1 - y0);
+      if (len < 4) return;
+      const ang = Math.atan2(y1 - y0, x1 - x0);
+      ctx.save();
+      ctx.lineCap = 'round';
+      ctx.setLineDash(dashed ? [10, 8] : []);
+      const ex = x1 - Math.cos(ang) * (head ? width * 1.6 : 0), ey = y1 - Math.sin(ang) * (head ? width * 1.6 : 0);
+      // dark outline first so the arrow reads over busy historical maps
+      ctx.strokeStyle = 'rgba(0, 0, 0, 0.45)';
+      ctx.lineWidth = width + 4;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = width;
+      ctx.beginPath();
+      ctx.moveTo(x0, y0);
+      ctx.lineTo(ex, ey);
+      ctx.stroke();
+      if (head) {
+        const hs = width * 2.6;
+        ctx.setLineDash([]);
+        ctx.beginPath();
+        ctx.moveTo(x1, y1);
+        ctx.lineTo(x1 - Math.cos(ang - 0.45) * hs, y1 - Math.sin(ang - 0.45) * hs);
+        ctx.lineTo(x1 - Math.cos(ang + 0.45) * hs, y1 - Math.sin(ang + 0.45) * hs);
+        ctx.closePath();
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    function drawMovementArrows(ctx, b, p, W, H) {
+      const units = (b.tactical_zoom && b.tactical_zoom.formations) || [];
+      const moveT = Math.min(1, p * 1.15); // same pace as the formation banners
+      units.forEach(u => {
+        const { x0, y0, x1, y1 } = formationPath(u, W, H);
+        const rgb = u.side === 'A' ? '79, 143, 232' : '229, 83, 75';
+        drawArrow(ctx, x0, y0, x1, y1, `rgba(${rgb}, 0.5)`, 7, true, true);
+        const cx = x0 + (x1 - x0) * moveT, cy = y0 + (y1 - y0) * moveT;
+        drawArrow(ctx, x0, y0, cx, cy, `rgba(${rgb}, 0.9)`, 7, false, moveT > 0.04);
+      });
+    }
+
     function stripEmoji(text) {
       return String(text || '').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, '').replace(/\s+/g, ' ').trim();
     }
@@ -1427,8 +1526,14 @@ JS_PART_2B = r"""
 
       // Advance simulation progress if playing
       if (state.sim.playing) {
+        const prevP = state.sim.progress;
         state.sim.progress += 0.0010 * state.sim.speed;
-        if (state.sim.progress >= 1.0) {
+        const stop = state.sim.stopAtPhases !== false ? phaseStartCrossed(b, prevP, state.sim.progress) : null;
+        if (stop) {
+          state.sim.progress = stop.r0 + 0.001; // just inside the new phase, so the panel and notch agree with the card
+          state.sim.phaseCard = stop.idx;
+          setSimStatus('paused');
+        } else if (state.sim.progress >= 1.0) {
           state.sim.progress = 1.0;
           setSimStatus('ended');
         }
@@ -1441,14 +1546,11 @@ JS_PART_2B = r"""
       // Determine Active Historical Phase from b.phases (5 Phases!)
       const phases = b.phases || [];
       const nPh = Math.max(1, phases.length);
+      // Current phase = the last phase that has started (a boundary belongs to the phase it opens)
       let phaseIdx = 0;
       for (let i = 0; i < phases.length; i++) {
         const r0 = (phases[i].range && typeof phases[i].range[0] === 'number') ? phases[i].range[0] : (i / nPh);
-        const r1 = (phases[i].range && typeof phases[i].range[1] === 'number') ? phases[i].range[1] : ((i + 1) / nPh);
-        if (p >= r0 && p <= r1 + 0.001) {
-          phaseIdx = i;
-          break;
-        }
+        if (p >= r0) phaseIdx = i;
       }
       const rawPhase = phases[phaseIdx] || {};
       const curPhase = {
@@ -1641,6 +1743,9 @@ JS_PART_2B = r"""
           ctx.stroke();
         });
       }
+
+      // Movement arrows: each formation's planned route (faint, dashed) and the part covered so far (solid)
+      drawMovementArrows(ctx, b, p, W, H);
 
       // Night phases: darken the battlefield under the units
       if (rawPhase.night) {

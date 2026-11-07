@@ -115,6 +115,8 @@ JS_PART_2A = r"""
       // Live Battle Simulation State
       sim: {
         status: 'ready', // 'ready' | 'playing' | 'paused' | 'ended' (set via setSimStatus)
+        stopAtPhases: true, // pause with a card at the start of each phase while playing
+        phaseCard: null, // index of the phase whose card is showing
         playing: false,
         speed: 1.0,
         progress: 0.0, // 0.0 to 1.0
