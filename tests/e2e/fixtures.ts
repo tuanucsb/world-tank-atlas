@@ -62,6 +62,7 @@ export async function openAtlas(page: Page, hash = '#/map') {
     typeof (window as any).tailwind !== 'undefined' &&
     // @ts-ignore page globals
     typeof drawUntil === 'number' && drawUntil > 0, null, { timeout: 30_000 });
+  await page.locator('#atlas-loader').waitFor({ state: 'detached', timeout: 10_000 });
 }
 
 // Battle and tank data straight from the built page, so tests follow the data

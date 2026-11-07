@@ -10,38 +10,34 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <!-- Fonts load without blocking the scripts below; text renders in the fallback face until they arrive -->
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" media="print" onload="this.media='all'" />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script>
-    // Design tokens (DESIGN.md): Tailwind palettes resolve to theme-aware CSS variables
-    const tokenRamp = (name) => Object.fromEntries(
-      [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map(s => [s, `rgb(var(--${name}-${s}) / <alpha-value>)`])
-    );
-    tailwind.config = {
-      theme: {
-        extend: {
-          colors: {
-            white: 'rgb(var(--n-50) / <alpha-value>)',
-            slate: tokenRamp('n'), gray: tokenRamp('n'), zinc: tokenRamp('n'),
-            amber: tokenRamp('acc'), yellow: tokenRamp('acc'), orange: tokenRamp('acc'),
-            sky: tokenRamp('sa'), cyan: tokenRamp('sa'), blue: tokenRamp('sa'),
-            indigo: tokenRamp('sa'), violet: tokenRamp('sa'), purple: tokenRamp('sa'), fuchsia: tokenRamp('sa'), pink: tokenRamp('sa'),
-            rose: tokenRamp('sb'), red: tokenRamp('sb'),
-            emerald: tokenRamp('ok'), green: tokenRamp('ok'), teal: tokenRamp('ok'), lime: tokenRamp('ok'),
-          },
-          fontFamily: {
-            sans: ['"IBM Plex Sans"', 'sans-serif'],
-            display: ['"Barlow Condensed"', '"IBM Plex Sans"', 'sans-serif'],
-          },
-          fontSize: {
-            xs: ['0.875rem', { lineHeight: '1.25rem' }],
-          },
-        },
-      },
-    };
-  </script>
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" media="print" onload="this.media='all'" />
+  <!-- Leaflet is only needed for the Terrain/Satellite backgrounds (guarded by typeof L) -->
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <style>
+    /* First-load screen (#atlas-loader): plain CSS, because Tailwind is still loading when it paints */
+    html { background-color: var(--background); }
+    #atlas-loader {
+      position: fixed; inset: 0; z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center;
+      gap: 14px; padding: 16px; text-align: center; background: var(--background); color: var(--foreground);
+      font: 15px/1.5 "IBM Plex Sans", system-ui, sans-serif; transition: opacity 200ms ease-out;
+    }
+    #atlas-loader.atlas-loader-out { opacity: 0; pointer-events: none; }
+    .atlas-loader-mark { display: flex; align-items: center; gap: 10px; font: 600 30px/1 "Barlow Condensed", "IBM Plex Sans", system-ui, sans-serif; letter-spacing: 0.02em; }
+    .atlas-loader-mark svg { color: var(--accent); }
+    #atlas-loader p { margin: 0; max-width: 320px; color: var(--muted-foreground); }
+    .atlas-loader-bar { position: relative; width: 160px; height: 3px; border-radius: 2px; background: var(--border); overflow: hidden; }
+    .atlas-loader-bar[hidden] { display: none; }
+    .atlas-loader-bar::after { content: ''; position: absolute; inset: 0; width: 40%; background: var(--accent); animation: atlas-load 1.1s ease-in-out infinite; }
+    @keyframes atlas-load { from { transform: translateX(-100%); } to { transform: translateX(250%); } }
+    .atlas-loader-actions { display: flex; gap: 8px; }
+    #atlas-loader button { height: 40px; padding: 0 16px; border-radius: 6px; border: 1px solid var(--border); background: transparent; color: var(--foreground); font: inherit; font-weight: 600; cursor: pointer; }
+    #atlas-loader button.primary { background: var(--accent); border-color: var(--accent); color: rgb(var(--n-950)); }
+    #atlas-loader button[hidden] { display: none; }
+    @media (prefers-reduced-motion: reduce) {
+      #atlas-loader { transition: none; }
+      .atlas-loader-bar::after { animation: none; width: 100%; opacity: 0.5; }
+    }
+
     /* Token ramps (RGB triplets). n = neutral, acc = accent, sa = Side A, sb = Side B, ok = winner/success */
     :root {
       --ok-50: 233 248 240; --ok-100: 205 238 221; --ok-200: 159 220 191; --ok-300: 115 203 161; --ok-400: 76 195 138; --ok-500: 54 168 115; --ok-600: 42 134 92; --ok-700: 33 103 71; --ok-800: 25 76 53; --ok-900: 17 52 35; --ok-950: 10 32 22;
@@ -240,6 +236,55 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
   </style>
 </head>
 <body class="bg-[var(--background)] text-[var(--foreground)] antialiased min-h-screen flex flex-col">
+
+  <!-- First-load screen: painted while Tailwind and the app load, removed by atlasLoader.done() -->
+  <div id="atlas-loader" role="status" aria-live="polite">
+    <div class="atlas-loader-mark">
+      <svg aria-hidden="true" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3l8 3v6c0 4.5-3.4 8.3-8 9-4.6-.7-8-4.5-8-9V6l8-3z"/></svg>
+      <span>World Tank Atlas</span>
+    </div>
+    <div class="atlas-loader-bar" aria-hidden="true"></div>
+    <p id="atlas-loader-msg">Loading __N_TANKS__ tanks and __N_BATTLES__ battles…</p>
+    <div class="atlas-loader-actions">
+      <button id="atlas-loader-reload" class="primary" hidden onclick="location.reload()">Reload</button>
+      <button id="atlas-loader-skip" hidden onclick="atlasLoader.finish()">Show the page anyway</button>
+    </div>
+  </div>
+  <noscript><style>#atlas-loader { display: none; }</style></noscript>
+  <script>
+    // After 10 s the screen says it is still loading; if Tailwind fails it says so. Either way the
+    // visitor can reload or see the page as it is. done() waits for the Tailwind styles, then fades out.
+    const atlasLoader = (() => {
+      const el = document.getElementById('atlas-loader');
+      let failed = false;
+      const say = (msg) => {
+        document.getElementById('atlas-loader-msg').textContent = msg;
+        document.getElementById('atlas-loader-reload').hidden = false;
+        document.getElementById('atlas-loader-skip').hidden = false;
+      };
+      const slow = setTimeout(() => say('Still loading. This can take a while on a slow connection.'), 10000);
+      const stylesReady = () => {
+        const bar = document.getElementById('app-bar');
+        return !!bar && getComputedStyle(bar).position === 'sticky';
+      };
+      function finish() {
+        clearTimeout(slow);
+        if (!el.isConnected) return;
+        el.classList.add('atlas-loader-out');
+        setTimeout(() => el.remove(), 250);
+      }
+      function failed_() {
+        failed = true;
+        clearTimeout(slow);
+        el.querySelector('.atlas-loader-bar').hidden = true;
+        say("The page styles couldn't load. Check your connection, then reload.");
+      }
+      function done() {
+        (function wait() { if (failed) return; stylesReady() ? finish() : setTimeout(wait, 50); })();
+      }
+      return { done, finish, failed: failed_ };
+    })();
+  </script>
 
   <!-- ======================================================================= -->
   <!-- UNIVERSAL INTERACTIVE TANK POPUP MODAL (Opens over ANY view on click!)  -->
@@ -696,4 +741,35 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
     </section>
 
   </main>
+
+  <!-- Tailwind loads after the markup so the loading screen above paints first -->
+  <script src="https://cdn.tailwindcss.com" onerror="atlasLoader.failed()"></script>
+  <script>
+    // Design tokens (DESIGN.md): Tailwind palettes resolve to theme-aware CSS variables
+    const tokenRamp = (name) => Object.fromEntries(
+      [50, 100, 200, 300, 400, 500, 600, 700, 800, 900, 950].map(s => [s, `rgb(var(--${name}-${s}) / <alpha-value>)`])
+    );
+    if (window.tailwind) tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            white: 'rgb(var(--n-50) / <alpha-value>)',
+            slate: tokenRamp('n'), gray: tokenRamp('n'), zinc: tokenRamp('n'),
+            amber: tokenRamp('acc'), yellow: tokenRamp('acc'), orange: tokenRamp('acc'),
+            sky: tokenRamp('sa'), cyan: tokenRamp('sa'), blue: tokenRamp('sa'),
+            indigo: tokenRamp('sa'), violet: tokenRamp('sa'), purple: tokenRamp('sa'), fuchsia: tokenRamp('sa'), pink: tokenRamp('sa'),
+            rose: tokenRamp('sb'), red: tokenRamp('sb'),
+            emerald: tokenRamp('ok'), green: tokenRamp('ok'), teal: tokenRamp('ok'), lime: tokenRamp('ok'),
+          },
+          fontFamily: {
+            sans: ['"IBM Plex Sans"', 'sans-serif'],
+            display: ['"Barlow Condensed"', '"IBM Plex Sans"', 'sans-serif'],
+          },
+          fontSize: {
+            xs: ['0.875rem', { lineHeight: '1.25rem' }],
+          },
+        },
+      },
+    };
+  </script>
 """

@@ -2742,6 +2742,7 @@ JS_PART_2B = r"""
       applyRoute();
       requestDraw(1000);
       requestAnimationFrame(tick);
+      atlasLoader.done();
     });
   </script>
 </body>
