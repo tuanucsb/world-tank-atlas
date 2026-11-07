@@ -393,11 +393,11 @@ finding above. Effort assumes features ~30x, architecture ~5x human:CC.
   - Surfaced by: eng review A2 (D5).
   - Files: `tank_atlas_src/build_v2_part2b.py` (`L.tileLayer` at `:441`).
   - Verify: Playwright blocks `*.tile.opentopomap.org` → ArcGIS tiles load; blocking both → schematic + "Map tiles unavailable", no provider flip-flop.
-- [ ] **T16 (P1, human: ~2 days / CC: ~1h): tests: pytest build/data checks + Playwright E2E harness.**
+- [x] **T16 (P1, human: ~2 days / CC: ~1h): tests: pytest build/data checks + Playwright E2E harness.**
   - Surfaced by: eng review TG1 (D7).
   - Files: `tests/test_build.py`, `tests/e2e/*.spec.ts`, `package.json`, `playwright.config.ts` (all in `world-tank-atlas/`).
   - Verify: `python3 -m pytest tests/` and `npx playwright test` pass; each UI task T3-T15 and T18 adds its spec when it lands.
-- [ ] **T17 (P1, human: ~4h / CC: ~15min): tests: regression suite over all 27 battles and 86 tanks.**
+- [x] **T17 (P1, human: ~4h / CC: ~15min): tests: regression suite over all 27 battles and 86 tanks.**
   - Surfaced by: eng review RG1 (D8).
   - Files: `tests/e2e/regression.spec.ts`.
   - Verify: written and green against the baseline page right after T0, and still green after every later task.

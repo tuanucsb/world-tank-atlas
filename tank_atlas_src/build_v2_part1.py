@@ -118,7 +118,7 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
     .cf-btn:hover { color: var(--foreground); }
     .cf-btn[aria-pressed="true"] { color: var(--foreground); border-color: var(--accent); background: rgb(var(--acc-400) / 0.18); font-weight: 600; }
     /* Battle theater: battlefield fills the screen under the app bar, battle header and force bar */
-    .sim-stage { height: calc(100vh - 260px); min-height: 420px; }
+    .sim-stage { height: calc(100vh - 272px); min-height: 420px; } /* app bar + battle header + control bar (with losses strip) fit in one screen */
     .sim-panel { height: calc(100vh - 260px + 56px); min-height: 476px; }
     .sim-notch {
       position: absolute; top: 0; transform: translateX(-1px); height: 18px; min-width: 18px; padding: 0 4px;
@@ -194,7 +194,10 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
         padding: 8px 12px; background: var(--card); border-bottom: 1px solid var(--border);
       }
       #app-bar.search-open #app-search input { width: 100%; height: 44px; }
-      #app-bar h1 { font-size: 20px; }
+      #app-bar h1 { font-size: 20px; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+      /* the wordmark gives way first, so the bar never overflows (e.g. a wider fallback font) */
+      #app-bar > div:first-child > div:first-child { flex-shrink: 1; min-width: 0; }
+      #site-switcher-btn { max-width: 100%; min-width: 0; }
       main { padding: 8px !important; }
       #map-canvas-wrap { height: calc(100vh - 48px - 44px - 64px - 24px) !important; min-height: 320px; }
       /* sim controls fixed at the bottom, within thumb reach; the story sheet sits on top of them */

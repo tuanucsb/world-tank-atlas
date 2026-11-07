@@ -1,0 +1,13 @@
+{
+  "name": "world-tank-atlas",
+  "private": true,
+  "description": "Browser tests for the World Tank Atlas page",
+  "scripts": {
+    "build": "python3 tank_atlas_src/assemble_v2.py",
+    "test": "python3 -m pytest tests/ -q && playwright test",
+    "test:e2e": "playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0"
+  }
+}

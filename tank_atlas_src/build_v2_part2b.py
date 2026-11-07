@@ -945,7 +945,7 @@ JS_PART_2B = r"""
               <!-- Column 2 (5 cols): Real Archival Photographs of Knocked-Out Tanks & How They Blew Up -->
               <div class="lg:col-span-5 bg-slate-900/90 border border-rose-500/40 rounded-xl p-3.5 flex flex-col gap-2.5">
                 <div class="flex items-center justify-between">
-                  <span class="text-xs font-extrabold text-rose-400 uppercase">🔥 Real Knocked-Out Tank Wreckage Photos (${wreckPhotos.length})</span>
+                  <span class="text-sm font-semibold text-[var(--foreground)]">Wreckage photos (${wreckPhotos.length})</span>
                   <span class="text-xs font-mono text-slate-400">Archival Combat Forensics</span>
                 </div>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 overflow-y-auto max-h-[420px] custom-scroll pr-1">
@@ -966,7 +966,7 @@ JS_PART_2B = r"""
               <!-- Column 3 (3 cols): Inline Playable Archival Combat & Anti-Tank Video Footage -->
               <div class="lg:col-span-3 bg-slate-900/90 border border-emerald-500/40 rounded-xl p-3.5 flex flex-col gap-2.5">
                 <div class="flex items-center justify-between">
-                  <span class="text-xs font-extrabold text-emerald-400 uppercase">🎬 Playable Combat Footage</span>
+                  <span class="text-sm font-semibold text-[var(--foreground)]">Combat footage</span>
                   <span class="text-xs font-mono text-emerald-300">HTML5 Video</span>
                 </div>
                 <div class="flex flex-col gap-2.5 overflow-y-auto max-h-[420px] custom-scroll pr-1">
