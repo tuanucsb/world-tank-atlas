@@ -366,6 +366,7 @@ JS_PART_2B = r"""
       state.sim.playing = status === 'playing';
       syncPlayButton();
       syncSimOverlay();
+      requestDraw(); // draw the frame the battle stops on
     }
 
     function syncSimOverlay() {
@@ -1004,6 +1005,8 @@ JS_PART_2B = r"""
       syncPlayButton();
       syncSimOverlay();
       observeSimStage();
+      observeKillCam();
+      requestDraw(300);
 
       setTimeout(() => {
         setSimMapBgMode(state.sim.mapBgMode || 'historical');
@@ -2666,17 +2669,60 @@ JS_PART_2B = r"""
       }, { passive: false });
     }
 
-    function tick() {
-      state.animTick++;
+    // Canvases redraw only when something changed. requestDraw(ms) keeps frames coming for ms
+    // (0 = the next frame); input, resizes and canvas image loads (getTankImg, getUrlImg) request it. Only a playing battle, the
+    // easing map camera, an open tactical view and an on-screen kill-cam animate on their own.
+    let drawUntil = 0;
+    let drawFrames = 0; // frames actually drawn, read by the draw-count probe
+    function requestDraw(ms = 0) {
+      drawUntil = Math.max(drawUntil, performance.now() + ms);
+    }
+    ['pointermove', 'pointerdown', 'pointerup', 'wheel', 'keydown', 'input', 'change', 'click', 'hashchange', 'popstate', 'focusin']
+      .forEach(type => window.addEventListener(type, () => requestDraw(800), { capture: true, passive: true }));
+    document.addEventListener('visibilitychange', () => requestDraw(200));
+    if ('ResizeObserver' in window) {
+      new ResizeObserver(() => requestDraw(200)).observe(document.documentElement);
+    } else {
+      window.addEventListener('resize', () => requestDraw(200));
+    }
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => requestDraw(200));
+
+    let killCamOnScreen = false;
+    let killCamObserver = null;
+    function observeKillCam() {
+      if (killCamObserver) killCamObserver.disconnect();
+      const canvas = document.getElementById('killcam-canvas');
+      killCamOnScreen = false;
+      if (!canvas || !('IntersectionObserver' in window)) { killCamOnScreen = !!canvas; return; }
+      killCamObserver = new IntersectionObserver(entries => {
+        entries.forEach(e => { killCamOnScreen = e.isIntersecting; });
+        requestDraw();
+      });
+      killCamObserver.observe(canvas);
+    }
+
+    function mapCameraMoving() {
+      const c = state.mCam;
+      return Math.abs(c.targetLon - c.lon) > 1e-4 || Math.abs(c.targetLat - c.lat) > 1e-4 || Math.abs(c.targetK - c.k) > 1e-4;
+    }
+
+    function tick(now) {
+      const dirty = now <= drawUntil;
+      let drew = false;
       if (state.mainView === 'graph') {
-        drawGraphCanvas();
+        if (dirty) { drawGraphCanvas(); drew = true; }
       } else if (state.mainView === 'map') {
-        drawWorldMap();
-        if (state.tacticalZoomOpen) drawTacticalSchematic();
+        const tactical = state.tacticalZoomOpen && !reducedMotion;
+        if (dirty || mapCameraMoving() || tactical) {
+          drawWorldMap();
+          if (state.tacticalZoomOpen) drawTacticalSchematic();
+          drew = true;
+        }
       } else if (state.mainView === 'battle-page') {
-        drawBattleSimCanvas();
-        drawKillCamCanvas();
+        if (dirty || state.sim.status === 'playing') { drawBattleSimCanvas(); drew = true; }
+        if (dirty || (killCamOnScreen && !reducedMotion && !document.hidden)) { drawKillCamCanvas(); drew = true; }
       }
+      if (drew) { state.animTick++; drawFrames++; }
       requestAnimationFrame(tick);
     }
 
@@ -2694,6 +2740,7 @@ JS_PART_2B = r"""
       setupMapCanvas();
       setup2DPanningFallback();
       applyRoute();
+      requestDraw(1000);
       requestAnimationFrame(tick);
     });
   </script>

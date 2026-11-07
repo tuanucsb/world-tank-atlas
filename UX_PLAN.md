@@ -401,7 +401,7 @@ finding above. Effort assumes features ~30x, architecture ~5x human:CC.
   - Surfaced by: eng review RG1 (D8).
   - Files: `tests/e2e/regression.spec.ts`.
   - Verify: written and green against the baseline page right after T0, and still green after every later task.
-- [ ] **T18 (P2, human: ~3h / CC: ~15min): perf: draw only while playing or when dirty; kill-cam only in viewport.**
+- [x] **T18 (P2, human: ~3h / CC: ~15min): perf: draw only while playing or when dirty; kill-cam only in viewport.**
   - Surfaced by: eng review P1 (D9), measured 7.83 ms/frame paused.
   - Files: `tank_atlas_src/build_v2_part2b.py` (`tick` at `:2272`).
   - Verify: rerun the 3 s draw-count probe; paused battle and idle map show ~0 draw calls; a hover after pause still redraws.

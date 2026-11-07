@@ -95,7 +95,7 @@ JS_PART_2A = r"""
     // Follows the setting live.
     const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     let reducedMotion = reducedMotionQuery.matches;
-    reducedMotionQuery.addEventListener('change', (e) => { reducedMotion = e.matches; });
+    reducedMotionQuery.addEventListener('change', (e) => { reducedMotion = e.matches; requestDraw(); });
 
     const state = {
       mainView: 'map',
@@ -144,6 +144,7 @@ JS_PART_2A = r"""
       if (!t || !t.photo_url) return null;
       if (!TANK_IMG_CACHE[tankId]) {
         const img = new Image();
+        img.onload = () => requestDraw(); // canvases draw only when dirty
         img.src = t.photo_url;
         TANK_IMG_CACHE[tankId] = img;
       }
@@ -154,6 +155,7 @@ JS_PART_2A = r"""
       if (!url) return null;
       if (!URL_IMG_CACHE[url]) {
         const img = new Image();
+        img.onload = () => requestDraw();
         img.src = url;
         URL_IMG_CACHE[url] = img;
       }
