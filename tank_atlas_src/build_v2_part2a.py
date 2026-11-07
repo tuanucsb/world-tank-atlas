@@ -306,7 +306,7 @@ JS_PART_2A = r"""
         <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-stretch">
           <div class="md:col-span-6 bg-slate-950 border border-slate-700 rounded-xl overflow-hidden flex flex-col justify-between">
             <div class="h-60 sm:h-64 w-full flex items-center justify-center bg-slate-950 overflow-hidden relative">
-              <img src="${t.image_url}" alt="${t.name}" class="w-full h-full object-contain" />
+              <img data-tank-id="${t.id}" src="${t.image_url}" alt="${t.name}" class="w-full h-full object-contain" />
             </div>
             <div class="px-3 py-2 bg-slate-900 border-t border-slate-800 flex items-center justify-between text-xs text-slate-300">
               <span>📸 Real Historical Photograph: <strong>${t.name}</strong></span>
@@ -370,7 +370,7 @@ JS_PART_2A = r"""
               ${combats.map(c => `
                 <button onclick="openTankPopup('${c.tank.id}')" class="p-2 rounded-lg bg-slate-950 border border-slate-800 hover:border-rose-400 text-left flex items-center justify-between gap-2 transition">
                   <div class="flex items-center gap-2">
-                    <img src="${c.tank.image_url}" alt="${c.tank.name}" class="w-10 h-7 rounded object-cover bg-slate-900 border border-slate-700 shrink-0" />
+                    <img data-tank-id="${c.tank.id}" src="${c.tank.image_url}" alt="${c.tank.name}" class="w-10 h-7 rounded object-cover bg-slate-900 border border-slate-700 shrink-0" />
                     <div>
                       <div class="font-bold text-rose-300">⚔️ ${NATION_MAP[c.tank.nation]?.flag || ''} ${c.tank.name} (${c.tank.year})</div>
                       <div class="text-xs text-slate-400 line-clamp-1">${c.label}</div>
@@ -1711,7 +1711,7 @@ JS_PART_2A = r"""
         return `
           <div onclick="openTankPopup('${t.id}')" class="shrink-0 w-36 rounded-lg bg-slate-950 border border-slate-700 hover:border-amber-400 p-1.5 cursor-pointer transition group flex flex-col gap-1 shadow" title="Click to open interactive Tank Popup for ${t.name}">
             <div class="relative w-full h-20 rounded overflow-hidden bg-slate-900 border border-slate-800">
-              <img src="${t.photo_url}" alt="${t.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-200" loading="lazy" />
+              <img data-tank-id="${t.id}" src="${t.photo_url}" alt="${t.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-200" loading="lazy" />
               <span class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-slate-950/85 text-xs font-mono font-bold text-amber-300">${t.year}</span>
               <span class="absolute bottom-1 right-1 px-1 py-0.5 rounded bg-slate-950/85 text-xs font-bold text-slate-200">${t.weight_t}t</span>
             </div>
@@ -1746,7 +1746,7 @@ JS_PART_2A = r"""
         if (!t) return '';
         return `
           <div onclick="openTankPopup('${t.id}')" class="p-2 rounded-lg bg-[var(--card)] hover:bg-slate-800/80 border ${colorCls} flex items-center justify-between gap-2.5 cursor-pointer transition group">
-            <img src="${t.photo_url}" alt="${t.name}" class="w-16 h-11 object-cover rounded border border-slate-700 shrink-0" loading="lazy" />
+            <img data-tank-id="${t.id}" src="${t.photo_url}" alt="${t.name}" class="w-16 h-11 object-cover rounded border border-slate-700 shrink-0" loading="lazy" />
             <div class="min-w-0 flex-1">
               <div class="text-xs font-extrabold text-[var(--foreground)] group-hover:text-amber-300 truncate">${NATION_MAP[t.nation]?.flag || ''} ${t.name} (${t.year})</div>
               <div class="text-xs text-[var(--muted-foreground)] truncate">${t.gun} • ${t.armor_mm}mm • ${t.weight_t}t</div>

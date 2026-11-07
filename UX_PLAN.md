@@ -381,7 +381,7 @@ finding above. Effort assumes features ~30x, architecture ~5x human:CC.
   - Surfaced by: Pass 2 (D6).
   - Files: `tank_atlas_src/build_v2_part1.py`, `build_v2_part2a.py`.
   - Verify: "zzqq" shows the message, Clear and 3 suggestions; Ukraine + Japan on the map shows Reset filters.
-- [ ] **T13 (P2, human: ~3h / CC: ~15min): photo 4:3 placeholders and blueprint fallback.**
+- [x] **T13 (P2, human: ~3h / CC: ~15min): photo 4:3 placeholders and blueprint fallback.**
   - Surfaced by: Pass 2 (D8).
   - Files: `tank_atlas_src/build_v2_part2a.py`.
   - Verify: block `upload.wikimedia.org` in devtools; every card shows a blueprint and "Photo unavailable", with no layout shift.

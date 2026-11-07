@@ -83,7 +83,7 @@ JS_PART_2B = r"""
           <div onclick="openTankPopup('${t.id}')" class="rounded-xl overflow-hidden border ${isSel ? 'border-amber-400 ring-2 ring-amber-400/40 bg-slate-900' : 'border-slate-800 bg-slate-950 hover:border-amber-400/70'} transition cursor-pointer group flex flex-col justify-between shadow">
             <div>
               <div class="relative h-24 w-full bg-slate-900 overflow-hidden">
-                <img src="${imgUrl}" alt="${t.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-200" loading="lazy" />
+                <img data-tank-id="${t.id}" src="${imgUrl}" alt="${t.name}" class="w-full h-full object-cover group-hover:scale-105 transition duration-200" loading="lazy" />
                 <span class="absolute top-1 left-1 px-1.5 py-0.5 rounded bg-slate-950/90 text-xs font-mono font-extrabold text-amber-300">${nat.flag} ${t.year}</span>
                 <span class="absolute bottom-1 right-1 px-1.5 py-0.5 rounded bg-slate-950/90 text-xs font-mono font-bold text-slate-200">${t.weight_t}t</span>
               </div>
@@ -577,7 +577,7 @@ JS_PART_2B = r"""
         return `
           <div onclick="openTankPopup('${t.id}')" class="p-3 rounded-xl bg-[var(--background)] hover:bg-slate-900 border border-${sideColor}-500/40 flex items-center justify-between gap-3 cursor-pointer transition group">
             <div class="flex items-center gap-3 min-w-0">
-              <img src="${imgUrl}" alt="${t.name}" class="w-20 h-14 rounded-lg object-cover bg-slate-950 border border-slate-700 shrink-0" loading="lazy" />
+              <img data-tank-id="${t.id}" src="${imgUrl}" alt="${t.name}" class="w-20 h-14 rounded-lg object-cover bg-slate-950 border border-slate-700 shrink-0" loading="lazy" />
               <div class="min-w-0">
                 <div class="text-sm font-extrabold text-[var(--foreground)] group-hover:text-amber-400 truncate">
                   ${nat.flag} ${t.name} (${t.year}) — ${t.role}
@@ -1496,6 +1496,26 @@ JS_PART_2B = r"""
       announcer.last = performance.now();
     }
 
+    // Image fallback: a tank photo that fails becomes that tank's blueprint ("Photo unavailable");
+    // any other failed image becomes a plain "Image unavailable" box. One capturing listener covers
+    // every image, including ones rendered later.
+    document.addEventListener('error', (e) => {
+      const img = e.target;
+      if (!(img instanceof HTMLImageElement) || img.dataset.fallbackDone || img.hasAttribute('onerror')) return;
+      if (!img.closest('main, #tank-popup-modal')) return;
+      img.dataset.fallbackDone = '1';
+      const t = img.dataset.tankId && TANK_MAP[img.dataset.tankId];
+      const box = document.createElement('div');
+      box.className = img.className + ' photo-fallback';
+      box.setAttribute('role', 'img');
+      box.setAttribute('aria-label', t ? `${t.name}: photo unavailable` : 'Image unavailable');
+      const wide = img.getBoundingClientRect().width >= 96 || img.classList.contains('w-full');
+      box.innerHTML = t
+        ? `${buildTankBlueprintSVG(t)}${wide ? '<span class="photo-fallback-caption">Photo unavailable</span>' : ''}`
+        : '<span class="photo-fallback-caption">Image unavailable</span>';
+      img.replaceWith(box);
+    }, true);
+
     function stripEmoji(text) {
       return String(text || '').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, '').replace(/\s+/g, ' ').trim();
     }
@@ -1591,7 +1611,7 @@ JS_PART_2B = r"""
           Back to story
         </button>
         <div class="aspect-[4/3] w-full rounded-md overflow-hidden bg-[var(--surface-raised)] border border-[var(--border)]">
-          <img src="${t.photo_url || t.image_url || ''}" alt="${t.name}" class="w-full h-full object-cover" />
+          <img data-tank-id="${t.id}" src="${t.photo_url || t.image_url || ''}" alt="${t.name}" class="w-full h-full object-cover" />
         </div>
         <div>
           <div class="text-xs font-semibold uppercase tracking-wide ${agent.side === 'A' ? 'text-sky-400' : 'text-rose-400'}">${agent.side === 'A' ? 'Side A' : 'Side B'}</div>

@@ -129,6 +129,12 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
 
     /* ---- Responsive: phones < 768px, tablets 768-1023px, desktop >= 1024px ---- */
     .mobile-only { display: none; }
+    /* Photos: tinted placeholder while loading; blueprint fallback when they fail */
+    main img, #tank-popup-modal img { background-color: var(--surface-raised); }
+    .photo-fallback { position: relative; display: flex; align-items: center; justify-content: center; overflow: hidden; background: var(--surface-raised); }
+    .photo-fallback > svg { width: 100%; height: 100%; }
+    .photo-fallback-caption { position: absolute; left: 6px; bottom: 4px; font-size: 12px; line-height: 1.3; padding: 1px 6px; border-radius: 4px; color: var(--muted-foreground); background: rgb(var(--n-950) / 0.85); }
+    .photo-fallback:not(:has(svg)) .photo-fallback-caption { position: static; background: none; }
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
     }
