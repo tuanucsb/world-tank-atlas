@@ -389,7 +389,7 @@ finding above. Effort assumes features ~30x, architecture ~5x human:CC.
   - Surfaced by: Pass 7 (D20).
   - Files: `tank_atlas_src/build_v2_part2b.py`, `battle_timelines_and_destruction.py`.
   - Verify: each of the 27 battles renders the table with no cell overflowing at 1440 and 375.
-- [ ] **T15 (P2, human: ~2h / CC: ~10min): sim: map-tile fallback (other provider once, then schematic + chip).**
+- [x] **T15 (P2, human: ~2h / CC: ~10min): sim: map-tile fallback (other provider once, then schematic + chip).**
   - Surfaced by: eng review A2 (D5).
   - Files: `tank_atlas_src/build_v2_part2b.py` (`L.tileLayer` at `:441`).
   - Verify: Playwright blocks `*.tile.opentopomap.org` → ArcGIS tiles load; blocking both → schematic + "Map tiles unavailable", no provider flip-flop.

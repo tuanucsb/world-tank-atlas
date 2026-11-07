@@ -478,6 +478,36 @@ JS_PART_2B = r"""
     let battleSimLeaflet = null;
     let battleSimTileLayer = null;
 
+    // Each tiled background tries its providers in order, once each. A provider that fails stays
+    // skipped until reload, so the map never flips back and forth; when all fail, the Grid shows.
+    const TILE_PROVIDERS = {
+      topo: [
+        { url: 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', credit: 'OpenTopoMap (CC-BY-SA), OpenStreetMap contributors' },
+        { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}', credit: 'Esri World Topo Map' }
+      ],
+      satellite: [
+        { url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', credit: 'Esri World Imagery' },
+        { url: 'https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg', credit: 'Sentinel-2 cloudless by EOX (CC BY-NC-SA 4.0)' }
+      ]
+    };
+    const tileProviderIdx = { topo: 0, satellite: 0 };
+
+    function tilesUnavailable(mode) {
+      return !!TILE_PROVIDERS[mode] && tileProviderIdx[mode] >= TILE_PROVIDERS[mode].length;
+    }
+
+    // A provider counts as down when 3 tiles fail before any tile loads
+    function watchTileLayer(layer, mode) {
+      let loaded = 0, failed = 0;
+      layer.on('tileload', () => { loaded++; });
+      layer.on('tileerror', () => {
+        failed++;
+        if (loaded || failed !== 3 || layer !== battleSimTileLayer) return;
+        tileProviderIdx[mode]++;
+        syncBattleSimMapLayers();
+      });
+    }
+
     function setSimMapBgMode(mode) {
       state.sim.mapBgMode = mode;
       ['historical', 'topo', 'satellite', 'tactical'].forEach(m => {
@@ -503,8 +533,16 @@ JS_PART_2B = r"""
         }
       }
 
+      const chip = document.getElementById('sim-tile-chip');
+      if (chip) chip.classList.toggle('hidden', !tilesUnavailable(mode));
+      const credit = document.getElementById('sim-tile-credit');
+      if (credit) {
+        const prov = TILE_PROVIDERS[mode] && TILE_PROVIDERS[mode][tileProviderIdx[mode]];
+        credit.textContent = prov ? ` · Map: ${prov.credit}` : '';
+      }
+
       if (leafDiv) {
-        if (mode === 'topo' || mode === 'satellite') {
+        if ((mode === 'topo' || mode === 'satellite') && !tilesUnavailable(mode)) {
           leafDiv.classList.remove('hidden');
           if (typeof L !== 'undefined') {
             if (!battleSimLeaflet || battleSimLeaflet._container !== leafDiv) {
@@ -522,13 +560,16 @@ JS_PART_2B = r"""
             if (battleSimTileLayer) {
               battleSimLeaflet.removeLayer(battleSimTileLayer);
             }
-            const tileUrl = mode === 'satellite'
-              ? 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}'
-              : 'https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png';
-            battleSimTileLayer = L.tileLayer(tileUrl, { maxZoom: 17 }).addTo(battleSimLeaflet);
+            battleSimTileLayer = L.tileLayer(TILE_PROVIDERS[mode][tileProviderIdx[mode]].url, { maxZoom: 17 });
+            watchTileLayer(battleSimTileLayer, mode);
+            battleSimTileLayer.addTo(battleSimLeaflet);
           }
         } else {
           leafDiv.classList.add('hidden');
+          if (battleSimLeaflet && battleSimTileLayer) {
+            battleSimLeaflet.removeLayer(battleSimTileLayer);
+            battleSimTileLayer = null;
+          }
         }
       }
     }
@@ -689,7 +730,10 @@ JS_PART_2B = r"""
                   title="Phases, tank counts and losses come from historical sources. Unit positions and movements on the map are illustrative.">
                   <span class="text-sky-400 tabular-nums">${countersA === b.side_a_num ? `${countersA} tanks, one counter each` : `${countersA} counters for ${b.side_a_num} tanks`}</span> ·
                   <span class="text-rose-400 tabular-nums">${countersB === b.side_b_num ? `${countersB} tanks, one counter each` : `${countersB} for ${b.side_b_num}`}</span> ·
-                  positions are illustrative
+                  positions are illustrative<span id="sim-tile-credit"></span>
+                </div>
+                <div id="sim-tile-chip" role="status" class="hidden absolute top-2 left-2 z-[15] px-2.5 py-1 rounded-md bg-[var(--card)]/90 border border-amber-400 text-xs text-[var(--foreground)] pointer-events-none">
+                  Map tiles unavailable. Showing the grid.
                 </div>
 
                 <!-- Ready (Play) and Ended (result) overlay; shown by syncSimOverlay() -->
@@ -1480,6 +1524,7 @@ JS_PART_2B = r"""
     document.addEventListener('error', (e) => {
       const img = e.target;
       if (!(img instanceof HTMLImageElement) || img.dataset.fallbackDone || img.hasAttribute('onerror')) return;
+      if (img.classList.contains('leaflet-tile')) return; // map tiles have their own fallback (TILE_PROVIDERS)
       if (!img.closest('main, #tank-popup-modal')) return;
       img.dataset.fallbackDone = '1';
       const t = img.dataset.tankId && TANK_MAP[img.dataset.tankId];
@@ -1752,7 +1797,7 @@ JS_PART_2B = r"""
       const isRaseiniai = b.id === 'raseiniai_1941';
       const terr = (b.tactical_zoom.terrain || '').toLowerCase();
       ctx.clearRect(0, 0, W, H);
-      if (state.sim.mapBgMode === 'tactical') {
+      if (state.sim.mapBgMode === 'tactical' || tilesUnavailable(state.sim.mapBgMode)) {
         if (terr.includes('desert') || terr.includes('sand') || terr.includes('wadi') || terr.includes('sinai')) {
           ctx.fillStyle = '#1c160d';
         } else if (terr.includes('jungle') || terr.includes('vietnam') || terr.includes('rubber') || terr.includes('rice')) {
