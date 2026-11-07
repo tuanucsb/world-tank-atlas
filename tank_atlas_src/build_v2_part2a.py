@@ -606,10 +606,13 @@ JS_PART_2A = r"""
       if (hash === lastAppliedHash && pendingBattleProgress === null) return;
       lastAppliedHash = hash;
       hideRouteNotice();
-      const [section, id] = hash.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
+      const [path, query] = hash.split('?');
+      const [section, id] = path.replace(/^#\/?/, '').split('/').map(decodeURIComponent);
+      const t = parseFloat(new URLSearchParams(query || '').get('t'));
 
       if (section === 'battles' && id) {
-        const progress = pendingBattleProgress === null ? 0.05 : pendingBattleProgress;
+        const progress = pendingBattleProgress !== null ? pendingBattleProgress
+          : (t >= 0 && t <= 1 ? Math.min(0.999, t) : 0.05);
         pendingBattleProgress = null;
         if (BATTLE_MAP[id]) return showBattlePage(id, progress);
         replaceRoute(lastAppliedHash = '#/battles');

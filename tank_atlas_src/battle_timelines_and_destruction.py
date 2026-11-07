@@ -437,6 +437,14 @@ def enrich_all_battles_with_forensics(battles):
 
         raw_phases = f["phases"]
         n_ph = max(1, len(raw_phases))
+        # Phases whose own text describes night fighting (1-based): the simulator darkens them
+        NIGHT_PHASES = {
+            ("lang_vei_ben_het_1968", 2), ("lang_vei_ben_het_1968", 4),  # night jungle gunnery; Ben Het night tank duel
+            ("chinese_farm_1973", 2), ("chinese_farm_1973", 5),          # night tank-and-ATGM melee
+            ("valley_of_tears_1973", 2),                                 # pitch-black night brawls
+            ("balaton_1945", 3),                                         # infrared night-vision sights
+            ("sinai_1967", 5),                                           # night combined-arms assault
+        }
         norm_phases = []
         for idx, ph in enumerate(raw_phases):
             ph_copy = dict(ph)
@@ -451,6 +459,7 @@ def enrich_all_battles_with_forensics(battles):
                 lb = int(round(f["numeric_lost_b"] * ph_copy.get("lost_b_pct", (idx + 1) / n_ph)))
                 fe = ph_copy.get("focus_event", "Armored engagement")
                 ph_copy["losses_note"] = f"{fe} · Losses so far: {la} vs {lb}"
+            ph_copy["night"] = (b["id"], idx + 1) in NIGHT_PHASES
             norm_phases.append(ph_copy)
         b["phases"] = norm_phases
 

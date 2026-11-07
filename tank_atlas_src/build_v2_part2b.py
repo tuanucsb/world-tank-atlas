@@ -576,6 +576,13 @@ JS_PART_2B = r"""
         `;
       };
 
+      // The simulator's units (deterministic), shared with the draw loop
+      simBattleCache.battleId = b.id;
+      simBattleCache.agents = buildBattleAgents(b);
+      const countersA = simBattleCache.agents.filter(a => a.side === 'A').length;
+      const countersB = simBattleCache.agents.filter(a => a.side === 'B').length;
+      const lossStrip = renderLossStrip(simBattleCache.agents, 40);
+
       container.innerHTML = `
         <!-- Battle theater: force bar, battlefield + docked controls, story panel -->
         <div id="battle-theater" class="flex flex-col gap-2">
@@ -609,6 +616,12 @@ JS_PART_2B = r"""
                 <img id="battle-sim-hist-map" src="${b.real_map_url || ''}" alt="Historical map of ${b.name}" class="absolute inset-0 w-full h-full object-cover opacity-45 pointer-events-none z-0" />
                 <div class="absolute inset-0 bg-slate-950/35 pointer-events-none z-[1]"></div>
                 <canvas id="battle-sim-canvas" class="relative z-10 w-full h-full block cursor-pointer"></canvas>
+                <div class="sim-scale-note absolute bottom-2 right-2 z-[15] max-w-[calc(100%-1rem)] px-2.5 py-1 rounded-md bg-[var(--card)]/90 border border-[var(--border)] text-xs text-[var(--muted-foreground)] pointer-events-auto"
+                  title="Phases, tank counts and losses come from historical sources. Unit positions and movements on the map are illustrative.">
+                  <span class="text-sky-400 tabular-nums">${countersA} counters for ${b.side_a_num} tanks</span> ·
+                  <span class="text-rose-400 tabular-nums">${countersB} for ${b.side_b_num}</span> ·
+                  positions are illustrative
+                </div>
 
                 <!-- Ready (Play) and Ended (result) overlay; shown by syncSimOverlay() -->
                 <div id="sim-overlay" class="hidden absolute inset-0 z-20 flex items-center justify-center bg-slate-950/55 p-4">
@@ -643,6 +656,10 @@ JS_PART_2B = r"""
                 <button id="sim-replay-btn" onclick="restartBattleSim()" aria-label="Replay from the start" title="Replay from the start" class="shrink-0 w-11 h-11 rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--background)] flex items-center justify-center">
                   <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
                 </button>
+                <button id="sim-link-btn" onclick="copySimMomentLink()" aria-label="Copy a link to this moment" title="Copy a link to this moment"
+                  class="shrink-0 w-11 h-11 rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--background)] flex items-center justify-center">
+                  <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7"/><path d="M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7"/></svg>
+                </button>
                 <span id="sim-time-readout" class="shrink-0 w-44 truncate text-sm tabular-nums text-[var(--foreground)]">${(phases[0] && phases[0].time) || b.date}</span>
                 <div class="relative flex-1 min-w-[160px] pt-5">
                   ${phases.map((ph, idx) => {
@@ -652,6 +669,7 @@ JS_PART_2B = r"""
                     const midPct = Math.round(((r0 + r1) / 2) * 100);
                     return `<button id="sim-notch-${idx}" class="sim-notch" style="left:${(r0 * 100).toFixed(1)}%" onclick="setBattleSimProgress(${midPct})" aria-label="Phase ${idx + 1}: ${(ph.title || '').replace(/"/g, '&quot;')}" title="Phase ${idx + 1}: ${(ph.title || '').replace(/"/g, '&quot;')}">${idx + 1}</button>`;
                   }).join('')}
+                  <div class="sim-loss-strip" title="Tanks knocked out over time: Side A above, Side B below">${lossStrip}</div>
                   <input id="sim-scrubber" type="range" min="0" max="1" step="0.004" value="${state.sim.progress}" oninput="scrubBattleSim(this.value)" aria-label="Battle timeline" class="w-full accent-amber-400 cursor-pointer" />
                 </div>
                 <div id="sim-speed-group" class="shrink-0 flex items-center gap-1" role="group" aria-label="Speed">
@@ -1248,6 +1266,42 @@ JS_PART_2B = r"""
       });
     }
 
+    // Losses strip: knock-outs per time bin, Side A bars up from the middle, Side B down
+    function renderLossStrip(agents, bins) {
+      const a = new Array(bins).fill(0), b = new Array(bins).fill(0);
+      agents.forEach(ag => {
+        if (ag.killAt > 1) return; // survivors
+        const i = Math.min(bins - 1, Math.floor(ag.killAt * bins));
+        (ag.side === 'A' ? a : b)[i]++;
+      });
+      const max = Math.max(1, ...a, ...b);
+      const bar = (v, i, up) => {
+        const h = (v / max) * 7.5;
+        return v ? `<rect x="${i + 0.15}" y="${up ? 8 - h : 8}" width="0.7" height="${h.toFixed(2)}" fill="${up ? 'var(--side-a)' : 'var(--side-b)'}"/>` : '';
+      };
+      return `<svg aria-hidden="true" viewBox="0 0 ${bins} 16" preserveAspectRatio="none" class="block w-full h-4">${a.map((v, i) => bar(v, i, true)).join('')}${b.map((v, i) => bar(v, i, false)).join('')}</svg>`;
+    }
+
+    function copySimMomentLink() {
+      const url = `${location.origin}${location.pathname}${location.search}#/battles/${state.selectedBattleId}?t=${state.sim.progress.toFixed(3)}`;
+      const btn = document.getElementById('sim-link-btn');
+      const done = (label) => {
+        btn.setAttribute('title', label);
+        btn.setAttribute('aria-label', label);
+        btn.classList.add('text-amber-400');
+        setTimeout(() => {
+          btn.setAttribute('title', 'Copy a link to this moment');
+          btn.setAttribute('aria-label', 'Copy a link to this moment');
+          btn.classList.remove('text-amber-400');
+        }, 2000);
+      };
+      if (navigator.clipboard && window.isSecureContext) {
+        navigator.clipboard.writeText(url).then(() => done('Link copied'), () => prompt('Copy this link:', url));
+      } else {
+        prompt('Copy this link:', url);
+      }
+    }
+
     function stripEmoji(text) {
       return String(text || '').replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{2B00}-\u{2BFF}\u{FE0F}]/gu, '').replace(/\s+/g, ' ').trim();
     }
@@ -1407,7 +1461,7 @@ JS_PART_2B = r"""
       const timeEl = document.getElementById('sim-time-readout');
       if (timeEl) timeEl.textContent = curPhase.time;
       const phaseEl = document.getElementById('sim-phase-label');
-      if (phaseEl) phaseEl.textContent = `${curPhase.phase} of ${nPh}`;
+      if (phaseEl) phaseEl.textContent = `${curPhase.phase} of ${nPh}${rawPhase.night ? ' · Night' : ''}`;
 
       const bTitle = document.getElementById('sim-banner-title');
       const bDesc = document.getElementById('sim-banner-desc');
@@ -1585,6 +1639,12 @@ JS_PART_2B = r"""
           ctx.ellipse(W * cxRatio, H * (0.32 + (idx % 2) * 0.34), 115, 55, 0.25 * idx, 0, Math.PI * 2);
           ctx.stroke();
         });
+      }
+
+      // Night phases: darken the battlefield under the units
+      if (rawPhase.night) {
+        ctx.fillStyle = 'rgba(4, 8, 24, 0.5)';
+        ctx.fillRect(0, 0, W, H);
       }
 
       // Compute Current Agent Screen Coordinates & Status

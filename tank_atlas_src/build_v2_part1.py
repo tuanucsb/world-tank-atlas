@@ -167,7 +167,8 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
       #map-canvas-wrap { height: calc(100vh - 48px - 44px - 64px - 24px) !important; min-height: 320px; }
       /* sim controls fixed at the bottom, within thumb reach; the story sheet sits on top of them */
       #sim-controls { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; height: 60px; min-height: 0; padding-top: 0; padding-bottom: 0; gap: 8px; }
-      #sim-time-readout, #sim-replay-btn { display: none !important; }
+      #sim-time-readout, #sim-replay-btn, .sim-loss-strip { display: none !important; }
+      .sim-scale-note { font-size: 12px; }
       .sim-panel.sheet { --sheet-bottom: 60px; }
       .sim-stage { height: calc(70vh - 244px) !important; min-height: 220px !important; }
       /* battle header wraps: back + title on one row, switcher + Details on the next */

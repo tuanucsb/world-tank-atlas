@@ -406,6 +406,16 @@ finding above. Effort assumes features ~30x, architecture ~5x human:CC.
   - Files: `tank_atlas_src/build_v2_part2b.py` (`tick` at `:2272`).
   - Verify: rerun the 3 s draw-count probe; paused battle and idle map show ~0 draw calls; a hover after pause still redraws.
 
+### Battle improvements: quick wins (added 2026-11-07 at the user's request)
+
+- [x] **B1+B2 (P2, CC: ~15min): battlefield: say what a counter stands for and that positions are illustrative.**
+  - Why: most battles draw a fixed 34 vs 30 counters whatever their size (Brody: ~103 tanks per counter; Villers-Bretonneux: 64 counters for 20 real tanks), so "one counter ≈ N tanks" would be false. The note states both numbers ("42 counters for 749 tanks · 28 for 245") and that positions are illustrative, while phases, counts and losses come from the sources.
+  - Files: `tank_atlas_src/build_v2_part2b.py` (`renderBattlePage`).
+- [x] **B3 (P2, CC: ~20min): losses strip above the scrubber.** Knock-outs over time per side (blue above, red below), from the same deterministic `buildBattleAgents` the simulator draws. Hidden below 768px.
+- [x] **B4 (P2, CC: ~20min): link to a moment.** `#/battles/<id>?t=0.42` opens the battle at that point (Ready state). A link button in the control bar copies the current moment.
+- [x] **B5 (P2, CC: ~15min): night phases.** Phases whose text describes night fighting get `night: true` in the data (Lang Vei/Ben Het 2 and 4, Chinese Farm 2 and 5, Valley of Tears 2, Balaton 3, Sinai 5); the battlefield darkens and the phase label adds "Night".
+- Later candidates (not scheduled): movement arrows per phase, pause at key moments, link knock-outs to the kill-cam, camera follows the action, see it from one side, end-of-battle quiz; and cap counters at the real tank count for small battles.
+
 Task notes from the eng review:
 - **T3:** routes use data ids verbatim (`#/battles/raseiniai_1941`, E4). The hash is the single owner of navigation, with `hashchange` → `applyRoute()`. Unknown ids go to the section index plus the no-results message via `replaceState` (D6).
 - **T7:** raise the canvas hit radius from 15px (`build_v2_part2b.py:1247`) to 22px on touch, for the 44px target in D16 (C1).
