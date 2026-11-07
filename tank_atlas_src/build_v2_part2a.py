@@ -91,6 +91,12 @@ JS_PART_2A = r"""
     const ERA_MAP = Object.fromEntries(ERAS.map(e => [e.id, e]));
 
     // Application State (Starts on World Map with Battle of Raseiniai 1941 selected!)
+    // Reduced motion (OS setting): units still move, but effects, easing and smooth scrolling are off.
+    // Follows the setting live.
+    const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let reducedMotion = reducedMotionQuery.matches;
+    reducedMotionQuery.addEventListener('change', (e) => { reducedMotion = e.matches; });
+
     const state = {
       mainView: 'map',
       selectedTankId: 'kv1',
@@ -118,7 +124,7 @@ JS_PART_2A = r"""
         stopAtPhases: true, // pause with a card at the start of each phase while playing
         phaseCard: null, // index of the phase whose card is showing
         playing: false,
-        speed: 1.0,
+        speed: reducedMotion ? 0.5 : 1.0,
         progress: 0.0, // 0.0 to 1.0
         showHulls: true,
         mapBgMode: 'historical', // 'historical' | 'topo' | 'satellite' | 'tactical'
@@ -564,7 +570,7 @@ JS_PART_2A = r"""
       const sel = document.getElementById('tank-page-select');
       if (sel) sel.value = state.selectedTankId;
       showView('tank-page');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
     }
 
     function showBattlePage(battleId, initialProgress = 0.05) {
@@ -581,7 +587,7 @@ JS_PART_2A = r"""
       state.sim.logs = [];
       state.sim.lastPhaseLogged = -1;
       showView('battle-page');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
     }
 
     // =========================================================================
@@ -1409,9 +1415,10 @@ JS_PART_2A = r"""
         canvas.height = Math.floor(rect.height * dpr);
       }
 
-      state.mCam.lon += (state.mCam.targetLon - state.mCam.lon) * 0.14;
-      state.mCam.lat += (state.mCam.targetLat - state.mCam.lat) * 0.14;
-      state.mCam.k += (state.mCam.targetK - state.mCam.k) * 0.14;
+      const ease = reducedMotion ? 1 : 0.14; // reduced motion: zooms and pans jump
+      state.mCam.lon += (state.mCam.targetLon - state.mCam.lon) * ease;
+      state.mCam.lat += (state.mCam.targetLat - state.mCam.lat) * ease;
+      state.mCam.k += (state.mCam.targetK - state.mCam.k) * ease;
 
       const readout = document.getElementById('map-zoom-readout');
       if (readout) {
@@ -1542,7 +1549,7 @@ JS_PART_2A = r"""
 
       // 4. Draw 27 Battle Markers (Color-coded by Victory / Era + Pulsing Ring)
       mapBattleScreenPins = [];
-      const pulse = (Math.sin(state.animTick * 0.08) + 1) * 0.5;
+      const pulse = reducedMotion ? 0.5 : (Math.sin(state.animTick * 0.08) + 1) * 0.5;
 
       if (state.mapPinMode !== 'tanks') {
         BATTLES.forEach(b => {

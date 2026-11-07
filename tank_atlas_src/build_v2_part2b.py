@@ -1183,7 +1183,7 @@ JS_PART_2B = r"""
 
         // Periodic Muzzle Blast Flame when firing
         const firingNow = ((state.animTick + Math.floor(x * 3)) % 52) < 5 && (curProgress || 0) >= 0.12;
-        if (firingNow) {
+        if (firingNow && !reducedMotion) {
           ctx.fillStyle = '#fef08a';
           ctx.beginPath();
           ctx.arc(agent.isHeavy ? 26 : 22, 0, agent.isHeavy ? 5.5 : 4, 0, Math.PI * 2);
@@ -1225,7 +1225,7 @@ JS_PART_2B = r"""
       if (isWreck) {
         if (!isNoFuel) {
           // Fresh Catastrophic Explosion & Flying Turret ("Jack-in-the-Box" Cook-Off) when just hit!
-          if (dtKill < 0.14) {
+          if (dtKill < 0.14 && !reducedMotion) {
             const ep = dtKill / 0.14; // 0 -> 1 explosion progress
             // Expanding Blast Shockwave Ring
             ctx.strokeStyle = `rgba(253, 224, 71, ${1 - ep})`;
@@ -1269,18 +1269,20 @@ JS_PART_2B = r"""
 
           }
 
-          // Continuous Burning Wreckage Flames & Billowing Black Oil Smoke Plume
-          const puff = (state.animTick * 0.035 + x * 0.13) % 1;
-          ctx.fillStyle = `rgba(15, 23, 42, ${0.78 - puff * 0.65})`;
-          ctx.beginPath();
-          ctx.arc(puff * 6 - 3, -8 - puff * 20, 5 + puff * 6, 0, Math.PI * 2);
-          ctx.fill();
+          // Continuous Burning Wreckage Flames & Billowing Black Oil Smoke Plume (skipped under reduced motion)
+          if (!reducedMotion) {
+            const puff = (state.animTick * 0.035 + x * 0.13) % 1;
+            ctx.fillStyle = `rgba(15, 23, 42, ${0.78 - puff * 0.65})`;
+            ctx.beginPath();
+            ctx.arc(puff * 6 - 3, -8 - puff * 20, 5 + puff * 6, 0, Math.PI * 2);
+            ctx.fill();
 
-          const flicker = 0.7 + Math.sin(state.animTick * 0.25 + y) * 0.3;
-          ctx.fillStyle = `rgba(249, 115, 22, ${0.85 * flicker})`;
-          ctx.beginPath();
-          ctx.arc(0, -2, 4.5 * flicker, 0, Math.PI * 2);
-          ctx.fill();
+            const flicker = 0.7 + Math.sin(state.animTick * 0.25 + y) * 0.3;
+            ctx.fillStyle = `rgba(249, 115, 22, ${0.85 * flicker})`;
+            ctx.beginPath();
+            ctx.arc(0, -2, 4.5 * flicker, 0, Math.PI * 2);
+            ctx.fill();
+          }
 
           // Red Knocked-Out Cross
           ctx.strokeStyle = '#ef4444';
@@ -1865,7 +1867,7 @@ JS_PART_2B = r"""
         const endY = (a.ty / 100) * H;
 
         // Slight tactical weave for living tanks
-        const wobble = isWreck ? 0 : Math.sin(state.animTick * 0.05 + a.sx) * 2.2;
+        const wobble = (isWreck || reducedMotion) ? 0 : Math.sin(state.animTick * 0.05 + a.sx) * 2.2;
         const x = startX + (endX - startX) * moveT;
         const y = startY + (endY - startY) * moveT + wobble;
         const angle = Math.atan2(endY - startY, endX - startX);
@@ -1882,7 +1884,7 @@ JS_PART_2B = r"""
       });
 
       // Draw Ballistic AP/HEAT/88mm Salvos & Ricochet Deflections between Active Platoons
-      if (p >= 0.10 && activeA.length && activeB.length) {
+      if (!reducedMotion && p >= 0.10 && activeA.length && activeB.length) {
         const pairs = Math.min(18, Math.max(activeA.length, activeB.length));
         for (let i = 0; i < pairs; i++) {
           const ua = activeA[i % activeA.length];
@@ -2041,7 +2043,7 @@ JS_PART_2B = r"""
       for (let y = 0; y < H; y += 32) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
 
       state.sim.killcamTick = (state.sim.killcamTick || 0) + 1;
-      const cycle = (state.sim.killcamTick % 190) / 190; // 0.0 to 1.0 repeating cycle
+      const cycle = reducedMotion ? 0.55 : (state.sim.killcamTick % 190) / 190; // 0.0 to 1.0 repeating cycle; one still frame under reduced motion
       const impactT = 0.42;
       const isRicochet = (sc.result || '').includes('RICOCHET');
 
@@ -2340,7 +2342,7 @@ JS_PART_2B = r"""
         const startY = (a.sy / 100) * H;
         const endX = (a.tx / 100) * W;
         const endY = (a.ty / 100) * H;
-        const wobble = isWreck ? 0 : Math.sin(state.animTick * 0.05 + a.sx) * 2.0;
+        const wobble = (isWreck || reducedMotion) ? 0 : Math.sin(state.animTick * 0.05 + a.sx) * 2.0;
         const x = startX + (endX - startX) * moveT;
         const y = startY + (endY - startY) * moveT + wobble;
         const angle = Math.atan2(endY - startY, endX - startX);

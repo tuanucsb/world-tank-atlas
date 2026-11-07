@@ -129,6 +129,9 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
 
     /* ---- Responsive: phones < 768px, tablets 768-1023px, desktop >= 1024px ---- */
     .mobile-only { display: none; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+    }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
     .app-tab[aria-selected="true"] { color: var(--foreground); border-bottom-color: var(--accent); }
     kbd { font-family: inherit; font-size: 13px; padding: 1px 6px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; color: var(--foreground); background: var(--background); }
@@ -430,7 +433,7 @@ HTML_HEAD_AND_BODY = r"""<!DOCTYPE html>
           <button onclick="stepBattlePage(1)" aria-label="Next battle" class="w-10 h-10 rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card)]">
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mx-auto"><path d="M9 6l6 6-6 6"/></svg>
           </button>
-          <button onclick="document.getElementById('battle-details').scrollIntoView({ behavior: 'smooth' })" class="ml-2 h-9 px-3 rounded-md text-sm font-semibold border border-[var(--border)] text-[var(--foreground)] hover:border-amber-400">
+          <button onclick="document.getElementById('battle-details').scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' })" class="ml-2 h-9 px-3 rounded-md text-sm font-semibold border border-[var(--border)] text-[var(--foreground)] hover:border-amber-400">
             Details
           </button>
         </div>

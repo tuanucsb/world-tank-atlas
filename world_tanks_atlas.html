@@ -128,6 +128,9 @@
 
     /* ---- Responsive: phones < 768px, tablets 768-1023px, desktop >= 1024px ---- */
     .mobile-only { display: none; }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { transition-duration: 0.01ms !important; animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; scroll-behavior: auto !important; }
+    }
     .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
     .app-tab[aria-selected="true"] { color: var(--foreground); border-bottom-color: var(--accent); }
     kbd { font-family: inherit; font-size: 13px; padding: 1px 6px; border: 1px solid var(--border); border-bottom-width: 2px; border-radius: 4px; color: var(--foreground); background: var(--background); }
@@ -429,7 +432,7 @@
           <button onclick="stepBattlePage(1)" aria-label="Next battle" class="w-10 h-10 rounded-md text-[var(--muted-foreground)] hover:text-[var(--foreground)] hover:bg-[var(--card)]">
             <svg aria-hidden="true" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="mx-auto"><path d="M9 6l6 6-6 6"/></svg>
           </button>
-          <button onclick="document.getElementById('battle-details').scrollIntoView({ behavior: 'smooth' })" class="ml-2 h-9 px-3 rounded-md text-sm font-semibold border border-[var(--border)] text-[var(--foreground)] hover:border-amber-400">
+          <button onclick="document.getElementById('battle-details').scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth' })" class="ml-2 h-9 px-3 rounded-md text-sm font-semibold border border-[var(--border)] text-[var(--foreground)] hover:border-amber-400">
             Details
           </button>
         </div>
@@ -762,6 +765,12 @@
     const ERA_MAP = Object.fromEntries(ERAS.map(e => [e.id, e]));
 
     // Application State (Starts on World Map with Battle of Raseiniai 1941 selected!)
+    // Reduced motion (OS setting): units still move, but effects, easing and smooth scrolling are off.
+    // Follows the setting live.
+    const reducedMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
+    let reducedMotion = reducedMotionQuery.matches;
+    reducedMotionQuery.addEventListener('change', (e) => { reducedMotion = e.matches; });
+
     const state = {
       mainView: 'map',
       selectedTankId: 'kv1',
@@ -789,7 +798,7 @@
         stopAtPhases: true, // pause with a card at the start of each phase while playing
         phaseCard: null, // index of the phase whose card is showing
         playing: false,
-        speed: 1.0,
+        speed: reducedMotion ? 0.5 : 1.0,
         progress: 0.0, // 0.0 to 1.0
         showHulls: true,
         mapBgMode: 'historical', // 'historical' | 'topo' | 'satellite' | 'tactical'
@@ -1235,7 +1244,7 @@
       const sel = document.getElementById('tank-page-select');
       if (sel) sel.value = state.selectedTankId;
       showView('tank-page');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
     }
 
     function showBattlePage(battleId, initialProgress = 0.05) {
@@ -1252,7 +1261,7 @@
       state.sim.logs = [];
       state.sim.lastPhaseLogged = -1;
       showView('battle-page');
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: reducedMotion ? 'auto' : 'smooth' });
     }
 
     // =========================================================================
@@ -2080,9 +2089,10 @@
         canvas.height = Math.floor(rect.height * dpr);
       }
 
-      state.mCam.lon += (state.mCam.targetLon - state.mCam.lon) * 0.14;
-      state.mCam.lat += (state.mCam.targetLat - state.mCam.lat) * 0.14;
-      state.mCam.k += (state.mCam.targetK - state.mCam.k) * 0.14;
+      const ease = reducedMotion ? 1 : 0.14; // reduced motion: zooms and pans jump
+      state.mCam.lon += (state.mCam.targetLon - state.mCam.lon) * ease;
+      state.mCam.lat += (state.mCam.targetLat - state.mCam.lat) * ease;
+      state.mCam.k += (state.mCam.targetK - state.mCam.k) * ease;
 
       const readout = document.getElementById('map-zoom-readout');
       if (readout) {
@@ -2213,7 +2223,7 @@
 
       // 4. Draw 27 Battle Markers (Color-coded by Victory / Era + Pulsing Ring)
       mapBattleScreenPins = [];
-      const pulse = (Math.sin(state.animTick * 0.08) + 1) * 0.5;
+      const pulse = reducedMotion ? 0.5 : (Math.sin(state.animTick * 0.08) + 1) * 0.5;
 
       if (state.mapPinMode !== 'tanks') {
         BATTLES.forEach(b => {
@@ -3694,7 +3704,7 @@
 
         // Periodic Muzzle Blast Flame when firing
         const firingNow = ((state.animTick + Math.floor(x * 3)) % 52) < 5 && (curProgress || 0) >= 0.12;
-        if (firingNow) {
+        if (firingNow && !reducedMotion) {
           ctx.fillStyle = '#fef08a';
           ctx.beginPath();
           ctx.arc(agent.isHeavy ? 26 : 22, 0, agent.isHeavy ? 5.5 : 4, 0, Math.PI * 2);
@@ -3736,7 +3746,7 @@
       if (isWreck) {
         if (!isNoFuel) {
           // Fresh Catastrophic Explosion & Flying Turret ("Jack-in-the-Box" Cook-Off) when just hit!
-          if (dtKill < 0.14) {
+          if (dtKill < 0.14 && !reducedMotion) {
             const ep = dtKill / 0.14; // 0 -> 1 explosion progress
             // Expanding Blast Shockwave Ring
             ctx.strokeStyle = `rgba(253, 224, 71, ${1 - ep})`;
@@ -3780,18 +3790,20 @@
 
           }
 
-          // Continuous Burning Wreckage Flames & Billowing Black Oil Smoke Plume
-          const puff = (state.animTick * 0.035 + x * 0.13) % 1;
-          ctx.fillStyle = `rgba(15, 23, 42, ${0.78 - puff * 0.65})`;
-          ctx.beginPath();
-          ctx.arc(puff * 6 - 3, -8 - puff * 20, 5 + puff * 6, 0, Math.PI * 2);
-          ctx.fill();
+          // Continuous Burning Wreckage Flames & Billowing Black Oil Smoke Plume (skipped under reduced motion)
+          if (!reducedMotion) {
+            const puff = (state.animTick * 0.035 + x * 0.13) % 1;
+            ctx.fillStyle = `rgba(15, 23, 42, ${0.78 - puff * 0.65})`;
+            ctx.beginPath();
+            ctx.arc(puff * 6 - 3, -8 - puff * 20, 5 + puff * 6, 0, Math.PI * 2);
+            ctx.fill();
 
-          const flicker = 0.7 + Math.sin(state.animTick * 0.25 + y) * 0.3;
-          ctx.fillStyle = `rgba(249, 115, 22, ${0.85 * flicker})`;
-          ctx.beginPath();
-          ctx.arc(0, -2, 4.5 * flicker, 0, Math.PI * 2);
-          ctx.fill();
+            const flicker = 0.7 + Math.sin(state.animTick * 0.25 + y) * 0.3;
+            ctx.fillStyle = `rgba(249, 115, 22, ${0.85 * flicker})`;
+            ctx.beginPath();
+            ctx.arc(0, -2, 4.5 * flicker, 0, Math.PI * 2);
+            ctx.fill();
+          }
 
           // Red Knocked-Out Cross
           ctx.strokeStyle = '#ef4444';
@@ -4376,7 +4388,7 @@
         const endY = (a.ty / 100) * H;
 
         // Slight tactical weave for living tanks
-        const wobble = isWreck ? 0 : Math.sin(state.animTick * 0.05 + a.sx) * 2.2;
+        const wobble = (isWreck || reducedMotion) ? 0 : Math.sin(state.animTick * 0.05 + a.sx) * 2.2;
         const x = startX + (endX - startX) * moveT;
         const y = startY + (endY - startY) * moveT + wobble;
         const angle = Math.atan2(endY - startY, endX - startX);
@@ -4393,7 +4405,7 @@
       });
 
       // Draw Ballistic AP/HEAT/88mm Salvos & Ricochet Deflections between Active Platoons
-      if (p >= 0.10 && activeA.length && activeB.length) {
+      if (!reducedMotion && p >= 0.10 && activeA.length && activeB.length) {
         const pairs = Math.min(18, Math.max(activeA.length, activeB.length));
         for (let i = 0; i < pairs; i++) {
           const ua = activeA[i % activeA.length];
@@ -4552,7 +4564,7 @@
       for (let y = 0; y < H; y += 32) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
 
       state.sim.killcamTick = (state.sim.killcamTick || 0) + 1;
-      const cycle = (state.sim.killcamTick % 190) / 190; // 0.0 to 1.0 repeating cycle
+      const cycle = reducedMotion ? 0.55 : (state.sim.killcamTick % 190) / 190; // 0.0 to 1.0 repeating cycle; one still frame under reduced motion
       const impactT = 0.42;
       const isRicochet = (sc.result || '').includes('RICOCHET');
 
@@ -4851,7 +4863,7 @@
         const startY = (a.sy / 100) * H;
         const endX = (a.tx / 100) * W;
         const endY = (a.ty / 100) * H;
-        const wobble = isWreck ? 0 : Math.sin(state.animTick * 0.05 + a.sx) * 2.0;
+        const wobble = (isWreck || reducedMotion) ? 0 : Math.sin(state.animTick * 0.05 + a.sx) * 2.0;
         const x = startX + (endX - startX) * moveT;
         const y = startY + (endY - startY) * moveT + wobble;
         const angle = Math.atan2(endY - startY, endX - startX);

@@ -373,7 +373,7 @@ finding above. Effort assumes features ~30x, architecture ~5x human:CC.
   - Surfaced by: Pass 6 (D17).
   - Files: `tank_atlas_src/build_v2_part1.py`, `build_v2_part2a.py`, `build_v2_part2b.py`.
   - Verify: the full journey works with keyboard only; VoiceOver announces the phase change; feed announcements are throttled.
-- [ ] **T11 (P2, human: ~3h / CC: ~15min): reduced-motion mode.**
+- [x] **T11 (P2, human: ~3h / CC: ~15min): reduced-motion mode.**
   - Surfaced by: Pass 6 (D18).
   - Files: `tank_atlas_src/build_v2_part2b.py`.
   - Verify: with emulated `prefers-reduced-motion: reduce`, no tracers or explosions draw, and the speed defaults to 0.5x.
