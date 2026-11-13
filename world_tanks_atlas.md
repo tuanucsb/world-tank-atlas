@@ -1,9 +1,8 @@
 # Global Tank Lineage, Similarity & Combat Atlas (1916–2026) — v2 Complete Edition
 
 ## File Locations
-- **Workspace Interactive Web App**: `/Users/tuandinh/Scifi/world-tank-atlas/world_tanks_atlas.html`
-- **Artifact Preview Copy**: `/Users/tuandinh/.gemini/antigravity/brain/0bba3639-6aa1-4358-af48-fa98be8e3cf6/world_tanks_atlas.html`
-- **Sister Sci-Fi AI Evolution Atlas**: `/Users/tuandinh/Scifi/index.html` (cross-linked in the top header of both files)
+- **Interactive Web App**: `world_tanks_atlas.html` (this folder)
+- **Sister Sci-Fi AI Evolution Atlas**: `../index.html` (cross-linked in the top header of both files)
 
 ---
 

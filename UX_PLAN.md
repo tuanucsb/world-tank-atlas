@@ -4,8 +4,8 @@ Source of truth for the UX changes approved in the 2026-11-05 `/plan-design-revi
 All changes land in the generators under `tank_atlas_src/`, never by hand-editing
 `world_tanks_atlas.html` (it is a build output).
 
-Target: `/Users/tuandinh/Scifi/world-tank-atlas/world_tanks_atlas.html`
-(moved from `/Users/tuandinh/Scifi/` on 2026-11-05).
+Target: `world-tank-atlas/world_tanks_atlas.html`
+(moved from the parent `Scifi/` folder on 2026-11-05).
 
 ## Goal
 
@@ -466,7 +466,7 @@ Remaining below 10:
 
 ## Eng Review (2026-11-05)
 
-Target: `/Users/tuandinh/Scifi/world-tank-atlas/UX_PLAN.md` (this file). No git
+Target: `world-tank-atlas/UX_PLAN.md` (this file). No git
 repo, no design doc; `/office-hours` skipped (eng D1).
 
 ### Scope record
@@ -484,9 +484,9 @@ feature answers: no cuts proposed (all 19 UX decisions individually approved in 
 ## Decision ledger
 
 ### R1: Put the atlas under version control before T0
-Finding: S5, CRITICAL, confidence 9/10, `/Users/tuandinh/Scifi` (`git rev-parse` fails; `gstack-review-read` prints `HEAD unknown`), reviewer: Claude (plan-eng-review)
+Finding: S5, CRITICAL, confidence 9/10, the `Scifi/` folder (`git rev-parse` fails; `gstack-review-read` prints `HEAD unknown`), reviewer: Claude (plan-eng-review)
 Plan baseline: no version control; the plan's 15 tasks rewrite ~4,600 lines of generators with no rollback.
-Runtime evidence: not a git repository (`git rev-parse --show-toplevel` fails in `/Users/tuandinh/Scifi` and `world-tank-atlas/`); `scifi-ai-atlas/` has its own `.git`.
+Runtime evidence: not a git repository (`git rev-parse --show-toplevel` fails in `Scifi/` and `world-tank-atlas/`); `scifi-ai-atlas/` has its own `.git`.
 Comparison grid:
 | Choice | Current | A | B |
 |---|---|---|---|
@@ -914,7 +914,7 @@ REALITY: pr-count pass no ship-policy, no remote; one commit per task in a singl
 - Lake Score: 5/6 (D5, D6, D7, D8, D9 picked the 10/10 option; D4 picked 8/10)
 - Corrections to the design review: E1, E2, E5 (premises in T0 were overstated; behavior unchanged)
 
-Test plan: `/Users/tuandinh/.gstack/projects/world-tank-atlas/tuandinh-unknown-eng-review-test-plan-20261105-232634.md`
+Test plan: kept locally in gstack's project folder for world-tank-atlas (eng review test plan, 2026-11-05); not in this repo.
 
 ## GSTACK REVIEW REPORT
 
